@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { Resolver } from "react-hook-form";
 import {
   propertySchema,
   type PropertyFormValues,
@@ -19,16 +16,18 @@ import ImageUpload from "./ImageUpload";
 
 function Field({
   label,
+  htmlFor,
   error,
   children,
 }: {
   label: string;
+  htmlFor?: string;
   error?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-sm">{label}</Label>
+      <Label htmlFor={htmlFor} className="text-sm">{label}</Label>
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
@@ -44,20 +43,18 @@ export default function PropertyForm({
   initialData,
   propertyId,
 }: PropertyFormProps) {
-  const router = useRouter();
   const [newImages, setNewImages] = useState<File[]>([]);
   const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
   const isEdit = !!propertyId;
 
   const {
     register,
-    handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    getValues,
   } = useForm<PropertyFormValues>({
-    resolver: zodResolver(propertySchema) as Resolver<PropertyFormValues>,
     defaultValues: initialData
       ? {
           type: initialData.type,
@@ -120,11 +117,27 @@ export default function PropertyForm({
     setDeletedImageIds(deletedIds);
   };
 
-  const onSubmit = async (data: PropertyFormValues) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setServerErrors({});
     setSubmitting(true);
+
     try {
+      const raw = getValues();
+      const parsed = propertySchema.safeParse(raw);
+
+      if (!parsed.success) {
+        const fieldErrors = parsed.error.flatten().fieldErrors;
+        const mapped: Record<string, string> = {};
+        for (const [key, msgs] of Object.entries(fieldErrors)) {
+          if (msgs && msgs.length > 0) mapped[key] = msgs[0];
+        }
+        setServerErrors(mapped);
+        return;
+      }
+
       const formData = new FormData();
-      formData.set("data", JSON.stringify(data));
+      formData.set("data", JSON.stringify(parsed.data));
       newImages.forEach((file) => formData.append("images", file));
       if (deletedImageIds.length > 0) {
         formData.set("deletedImageIds", JSON.stringify(deletedImageIds));
@@ -137,15 +150,20 @@ export default function PropertyForm({
 
       if (res.ok) {
         const { id } = await res.json();
-        router.push(`/properties/${id}`);
+        window.location.href = `/properties/${id}`;
+      } else {
+        const body = await res.json().catch(() => null);
+        alert(`저장 실패: ${body?.error || res.statusText}`);
       }
+    } catch (err) {
+      alert(`요청 실패: ${err}`);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+    <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
       {/* 타입 탭 */}
       <div className="flex gap-2">
         {(["villa", "shop"] as const).map((t) => (
@@ -175,15 +193,16 @@ export default function PropertyForm({
       </div>
 
       {/* 주소 */}
-      <Field label="주소 *" error={errors.address?.message}>
+      <Field label="주소 *" htmlFor="address" error={serverErrors.address}>
         <Input
+          id="address"
           {...register("address")}
           placeholder="예: 서울시 관악구 봉천동 123-4"
         />
       </Field>
 
       {/* 거래 유형 */}
-      <Field label="거래 유형 *" error={errors.deal_type?.message}>
+      <Field label="거래 유형 *" error={serverErrors.deal_type}>
         <div className="flex gap-2">
           {(["monthly", "jeonse", "sale"] as const).map((dt) => (
             <button
@@ -206,11 +225,12 @@ export default function PropertyForm({
       {/* 가격 필드 */}
       {dealType === "monthly" && (
         <div className="grid grid-cols-2 gap-3">
-          <Field label="보증금 (만원) *" error={errors.deposit?.message}>
-            <Input type="number" {...register("deposit")} placeholder="1000" />
+          <Field label="보증금 (만원) *" htmlFor="deposit" error={serverErrors.deposit}>
+            <Input id="deposit" type="number" {...register("deposit")} placeholder="1000" />
           </Field>
-          <Field label="월세 (만원) *" error={errors.monthly_rent?.message}>
+          <Field label="월세 (만원) *" htmlFor="monthly_rent" error={serverErrors.monthly_rent}>
             <Input
+              id="monthly_rent"
               type="number"
               {...register("monthly_rent")}
               placeholder="50"
@@ -219,8 +239,9 @@ export default function PropertyForm({
         </div>
       )}
       {dealType === "jeonse" && (
-        <Field label="전세금 (만원) *" error={errors.jeonse_price?.message}>
+        <Field label="전세금 (만원) *" htmlFor="jeonse_price" error={serverErrors.jeonse_price}>
           <Input
+            id="jeonse_price"
             type="number"
             {...register("jeonse_price")}
             placeholder="15000"
@@ -228,8 +249,9 @@ export default function PropertyForm({
         </Field>
       )}
       {dealType === "sale" && (
-        <Field label="매매가 (만원) *" error={errors.sale_price?.message}>
+        <Field label="매매가 (만원) *" htmlFor="sale_price" error={serverErrors.sale_price}>
           <Input
+            id="sale_price"
             type="number"
             {...register("sale_price")}
             placeholder="30000"
@@ -258,8 +280,8 @@ export default function PropertyForm({
         </div>
       </Field>
 
-      <Field label="이사 예정월">
-        <Input type="month" {...register("move_out_month")} />
+      <Field label="이사 예정월" htmlFor="move_out_month">
+        <Input id="move_out_month" type="month" {...register("move_out_month")} />
       </Field>
 
       {/* 빌라 전용 */}
@@ -269,24 +291,25 @@ export default function PropertyForm({
             빌라 정보
           </h3>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="호수">
-              <Input {...register("unit_number")} placeholder="201호" />
+            <Field label="호수" htmlFor="unit_number">
+              <Input id="unit_number" {...register("unit_number")} placeholder="201호" />
             </Field>
-            <Field label="방 개수">
-              <Input type="number" {...register("rooms")} placeholder="2" />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="채광">
-              <Input {...register("lighting")} placeholder="좋음" />
-            </Field>
-            <Field label="수리 상태">
-              <Input {...register("repair_status")} placeholder="올수리" />
+            <Field label="방 개수" htmlFor="rooms">
+              <Input id="rooms" type="number" {...register("rooms")} placeholder="2" />
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="연식 (년)">
+            <Field label="채광" htmlFor="lighting">
+              <Input id="lighting" {...register("lighting")} placeholder="좋음" />
+            </Field>
+            <Field label="수리 상태" htmlFor="repair_status">
+              <Input id="repair_status" {...register("repair_status")} placeholder="올수리" />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="연식 (년)" htmlFor="building_age">
               <Input
+                id="building_age"
                 type="number"
                 {...register("building_age")}
                 placeholder="15"
@@ -322,11 +345,12 @@ export default function PropertyForm({
             상가 정보
           </h3>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="층수">
-              <Input {...register("floor")} placeholder="1층" />
+            <Field label="층수" htmlFor="floor">
+              <Input id="floor" {...register("floor")} placeholder="1층" />
             </Field>
-            <Field label="면적 (m²)">
+            <Field label="면적 (m²)" htmlFor="area">
               <Input
+                id="area"
                 type="number"
                 step="0.01"
                 {...register("area")}
@@ -335,15 +359,17 @@ export default function PropertyForm({
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="권리금 (만원)">
+            <Field label="권리금 (만원)" htmlFor="premium">
               <Input
+                id="premium"
                 type="number"
                 {...register("premium")}
                 placeholder="5000"
               />
             </Field>
-            <Field label="업종 제한">
+            <Field label="업종 제한" htmlFor="business_restriction">
               <Input
+                id="business_restriction"
                 {...register("business_restriction")}
                 placeholder="음식점 불가"
               />
@@ -357,14 +383,14 @@ export default function PropertyForm({
         <h3 className="text-sm font-semibold border-b border-border pb-2">
           연락처 / 보안
         </h3>
-        <Field label="집주인 연락처">
-          <Input {...register("owner_phone")} placeholder="010-1234-5678" />
+        <Field label="집주인 연락처" htmlFor="owner_phone">
+          <Input id="owner_phone" {...register("owner_phone")} placeholder="010-1234-5678" />
         </Field>
-        <Field label="임대인 성향">
-          <Input {...register("owner_personality")} placeholder="온화함" />
+        <Field label="임대인 성향" htmlFor="owner_personality">
+          <Input id="owner_personality" {...register("owner_personality")} placeholder="온화함" />
         </Field>
-        <Field label="현관 비밀번호">
-          <Input {...register("door_password")} placeholder="1234#" />
+        <Field label="현관 비밀번호" htmlFor="door_password">
+          <Input id="door_password" {...register("door_password")} placeholder="1234#" />
         </Field>
       </div>
 
@@ -373,15 +399,16 @@ export default function PropertyForm({
         <h3 className="text-sm font-semibold border-b border-border pb-2">
           기타
         </h3>
-        <Field label="특이사항">
+        <Field label="특이사항" htmlFor="notes">
           <Textarea
+            id="notes"
             {...register("notes")}
             placeholder="역세권 도보 5분"
             rows={2}
           />
         </Field>
-        <Field label="메모">
-          <Textarea {...register("memo")} placeholder="자유 메모" rows={2} />
+        <Field label="메모" htmlFor="memo">
+          <Textarea id="memo" {...register("memo")} placeholder="자유 메모" rows={2} />
         </Field>
       </div>
 

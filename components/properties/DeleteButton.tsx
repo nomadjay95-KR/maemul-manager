@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function DeleteButton({ propertyId }: { propertyId: string }) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
@@ -17,8 +15,13 @@ export default function DeleteButton({ propertyId }: { propertyId: string }) {
       });
 
       if (res.ok) {
-        router.push("/");
+        window.location.href = "/";
+      } else {
+        const body = await res.json().catch(() => null);
+        alert(`삭제 실패: ${body?.error || res.statusText}`);
       }
+    } catch (err) {
+      alert(`삭제 요청 실패: ${err}`);
     } finally {
       setLoading(false);
     }
