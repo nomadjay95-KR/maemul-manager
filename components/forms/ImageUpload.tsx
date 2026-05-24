@@ -3,62 +3,90 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import type { PropertyImage } from "@/types/property";
 
 const MAX_IMAGES = 3;
 
 interface ImageUploadProps {
-  onChange: (files: File[]) => void;
+  existingImages?: PropertyImage[];
+  onChange: (newFiles: File[], deletedImageIds: string[]) => void;
 }
 
-export default function ImageUpload({ onChange }: ImageUploadProps) {
-  const [previews, setPreviews] = useState<{ file: File; url: string }[]>([]);
+export default function ImageUpload({
+  existingImages = [],
+  onChange,
+}: ImageUploadProps) {
+  const [existing, setExisting] = useState(existingImages);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [newPreviews, setNewPreviews] = useState<
+    { file: File; url: string }[]
+  >([]);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const totalCount = existing.length + newPreviews.length;
 
   const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
     if (selected.length === 0) return;
 
-    const remaining = MAX_IMAGES - previews.length;
+    const remaining = MAX_IMAGES - totalCount;
     const toAdd = selected.slice(0, remaining);
 
-    const newPreviews = toAdd.map((file) => ({
+    const added = toAdd.map((file) => ({
       file,
       url: URL.createObjectURL(file),
     }));
 
-    const updated = [...previews, ...newPreviews];
-    setPreviews(updated);
-    onChange(updated.map((p) => p.file));
+    const updatedNew = [...newPreviews, ...added];
+    setNewPreviews(updatedNew);
+    onChange(
+      updatedNew.map((p) => p.file),
+      deletedIds
+    );
 
-    // reset input
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const handleRemove = (index: number) => {
-    URL.revokeObjectURL(previews[index].url);
-    const updated = previews.filter((_, i) => i !== index);
-    setPreviews(updated);
-    onChange(updated.map((p) => p.file));
+  const handleRemoveExisting = (img: PropertyImage) => {
+    const updatedExisting = existing.filter((e) => e.id !== img.id);
+    const updatedDeletedIds = [...deletedIds, img.id];
+    setExisting(updatedExisting);
+    setDeletedIds(updatedDeletedIds);
+    onChange(
+      newPreviews.map((p) => p.file),
+      updatedDeletedIds
+    );
+  };
+
+  const handleRemoveNew = (index: number) => {
+    URL.revokeObjectURL(newPreviews[index].url);
+    const updatedNew = newPreviews.filter((_, i) => i !== index);
+    setNewPreviews(updatedNew);
+    onChange(
+      updatedNew.map((p) => p.file),
+      deletedIds
+    );
   };
 
   return (
     <div>
       <div className="flex gap-2 overflow-x-auto pb-2">
-        {previews.map((preview, i) => (
+        {/* 기존 이미지 */}
+        {existing.map((img) => (
           <div
-            key={i}
+            key={img.id}
             className="relative w-28 h-28 flex-shrink-0 rounded-lg overflow-hidden bg-muted"
           >
             <Image
-              src={preview.url}
-              alt={`사진 ${i + 1}`}
+              src={img.image_url}
+              alt="기존 사진"
               fill
               className="object-cover"
               sizes="112px"
             />
             <button
               type="button"
-              onClick={() => handleRemove(i)}
+              onClick={() => handleRemoveExisting(img)}
               className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-black/80"
             >
               ✕
@@ -66,7 +94,30 @@ export default function ImageUpload({ onChange }: ImageUploadProps) {
           </div>
         ))}
 
-        {previews.length < MAX_IMAGES && (
+        {/* 새 이미지 */}
+        {newPreviews.map((preview, i) => (
+          <div
+            key={`new-${i}`}
+            className="relative w-28 h-28 flex-shrink-0 rounded-lg overflow-hidden bg-muted"
+          >
+            <Image
+              src={preview.url}
+              alt={`새 사진 ${i + 1}`}
+              fill
+              className="object-cover"
+              sizes="112px"
+            />
+            <button
+              type="button"
+              onClick={() => handleRemoveNew(i)}
+              className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-black/80"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+
+        {totalCount < MAX_IMAGES && (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
@@ -78,7 +129,7 @@ export default function ImageUpload({ onChange }: ImageUploadProps) {
           >
             <span className="text-2xl">+</span>
             <span className="text-xs">
-              {previews.length}/{MAX_IMAGES}
+              {totalCount}/{MAX_IMAGES}
             </span>
           </button>
         )}

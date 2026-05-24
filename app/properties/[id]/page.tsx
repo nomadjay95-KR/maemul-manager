@@ -3,6 +3,7 @@ import Link from "next/link";
 import { fetchPropertyById } from "@/lib/queries/properties";
 import PropertyDetail from "@/components/properties/PropertyDetail";
 import StatusChanger from "@/components/properties/StatusChanger";
+import DeleteButton from "@/components/properties/DeleteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -29,25 +30,23 @@ export default async function PropertyPage({ params }: PageProps) {
           ← 목록
         </Link>
         <div className="flex gap-2">
-          <button
-            disabled
-            className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground bg-muted opacity-50 cursor-not-allowed"
+          <Link
+            href={`/properties/${property.id}/edit`}
+            className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted transition-colors"
           >
             수정
-          </button>
-          <button
-            disabled
-            className="px-3 py-1.5 rounded-lg text-sm text-destructive bg-muted opacity-50 cursor-not-allowed"
-          >
-            삭제
-          </button>
+          </Link>
+          <DeleteButton propertyId={property.id} />
         </div>
       </div>
 
       {/* 상태 변경 */}
       <div className="mb-6">
         <p className="text-xs text-muted-foreground mb-2">상태 변경</p>
-        <StatusChanger propertyId={property.id} currentStatus={property.status} />
+        <StatusChanger
+          propertyId={property.id}
+          currentStatus={property.status}
+        />
       </div>
 
       {/* 상세 정보 */}
