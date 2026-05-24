@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { getSupabase } from "@/lib/supabase";
 import type {
   Property,
@@ -76,6 +77,9 @@ export async function updatePropertyStatus(
     console.error("Failed to update property status:", error.message);
     return false;
   }
+
+  revalidatePath("/");
+  revalidatePath(`/properties/${id}`);
 
   return true;
 }

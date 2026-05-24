@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { getSupabase } from "@/lib/supabase";
 import { propertySchema } from "@/lib/validations/property";
 
@@ -64,6 +65,9 @@ export async function createProperty(
 
   await uploadImages(property.id, imageFiles);
 
+  revalidatePath("/");
+  revalidatePath(`/properties/${property.id}`);
+
   return { id: property.id };
 }
 
@@ -118,6 +122,9 @@ export async function updateProperty(
 
   await uploadImages(id, imageFiles, count ?? 0);
 
+  revalidatePath("/");
+  revalidatePath(`/properties/${id}`);
+
   return { id };
 }
 
@@ -143,6 +150,8 @@ export async function deleteProperty(
     console.error("Failed to delete property:", error.message);
     return { error: "매물 삭제에 실패했습니다." };
   }
+
+  revalidatePath("/");
 
   return { success: true };
 }
