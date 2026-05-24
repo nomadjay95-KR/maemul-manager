@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { fetchProperties } from "@/lib/queries/properties";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +24,15 @@ export default async function Home({ searchParams }: PageProps) {
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-foreground">매물 목록</h1>
-        <LockButton />
+        <div className="flex gap-2">
+          <Link
+            href="/properties/new"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
+          >
+            + 등록
+          </Link>
+          <LockButton />
+        </div>
       </div>
 
       {/* 필터 */}
