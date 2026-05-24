@@ -9,7 +9,7 @@ export type PropertyType = "villa" | "shop";
 export type DealType = "monthly" | "jeonse" | "sale";
 
 /** 매물 상태 */
-export type PropertyStatus = "active" | "completed";
+export type PropertyStatus = "active" | "reserved" | "completed";
 
 /** 입주 상태 */
 export type OccupancyStatus = "vacant" | "occupied";
