@@ -1,5 +1,10 @@
 import { getSupabase } from "@/lib/supabase";
-import type { Property, PropertyStatus, PropertyType } from "@/types/property";
+import type {
+  Property,
+  PropertyStatus,
+  PropertyType,
+  PropertyWithImages,
+} from "@/types/property";
 
 export interface PropertyFilters {
   status?: PropertyStatus;
@@ -31,4 +36,46 @@ export async function fetchProperties(
   }
 
   return data as Property[];
+}
+
+export async function fetchPropertyById(
+  id: string
+): Promise<PropertyWithImages | null> {
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase
+    .from("properties")
+    .select("*, images:property_images(*)")
+    .eq("id", id)
+    .order("sort_order", {
+      referencedTable: "property_images",
+      ascending: true,
+    })
+    .single();
+
+  if (error) {
+    console.error("Failed to fetch property:", error.message);
+    return null;
+  }
+
+  return data as PropertyWithImages;
+}
+
+export async function updatePropertyStatus(
+  id: string,
+  status: PropertyStatus
+): Promise<boolean> {
+  const supabase = getSupabase();
+
+  const { error } = await supabase
+    .from("properties")
+    .update({ status })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Failed to update property status:", error.message);
+    return false;
+  }
+
+  return true;
 }
