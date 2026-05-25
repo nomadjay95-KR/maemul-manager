@@ -151,15 +151,14 @@ export default function ScheduleForm({
       ? calculateFee(contractDealType, effectiveAmount)
       : null;
 
-  // effectiveAmount/maxFee → form values 동기화
+  // effectiveAmount → form value 동기화
   useEffect(() => {
     if (selectedCategory !== "contract") return;
     setValue(
       "transaction_amount",
       effectiveAmount != null && effectiveAmount > 0 ? effectiveAmount : null
     );
-    setValue("fee", maxFee);
-  }, [effectiveAmount, maxFee, selectedCategory, setValue]);
+  }, [effectiveAmount, selectedCategory, setValue]);
 
   // category 변경 시 contract 전용 필드 초기화
   useEffect(() => {
@@ -410,19 +409,35 @@ export default function ScheduleForm({
             </Field>
           )}
 
-          {/* 최대중개보수 (읽기 전용) */}
-          <div className="rounded-xl border border-border p-4 bg-muted/30">
-            <p className="text-sm font-bold text-muted-foreground mb-1">
-              최대중개보수 (법정 상한)
-            </p>
-            <p className="text-2xl font-bold text-foreground">
-              {maxFee != null ? formatPrice(maxFee) : "-"}
-            </p>
-            {maxFee != null && (
-              <p className="text-sm text-muted-foreground mt-1">
-                실제 중개보수는 협의 가능
+          {/* 최대중개보수 + 실제중개보수 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-border p-4 bg-muted/30">
+              <p className="text-sm font-bold text-muted-foreground mb-1">
+                최대중개보수
               </p>
-            )}
+              <p className="text-2xl font-bold text-foreground">
+                {maxFee != null ? formatPrice(maxFee) : "-"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">법정 상한</p>
+            </div>
+            <div className="rounded-xl border border-border p-4">
+              <p className="text-sm font-bold text-muted-foreground mb-1">
+                실제중개보수
+              </p>
+              <div className="relative mt-1">
+                <Input
+                  id="fee"
+                  type="number"
+                  inputMode="numeric"
+                  {...register("fee", { valueAsNumber: true })}
+                  placeholder={maxFee != null ? String(maxFee) : "-"}
+                  className="h-10 text-base pr-14"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                  만원
+                </span>
+              </div>
+            </div>
           </div>
         </>
       )}
