@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import {
   scheduleSchema,
@@ -44,6 +44,29 @@ const CATEGORIES: ScheduleCategory[] = [
   "etc",
 ];
 
+const DEAL_LABEL: Record<string, string> = {
+  sale: "매매가",
+  jeonse: "전세금",
+  monthly: "환산액",
+};
+
+/** 매물의 거래유형에 따른 거래금액 산출 */
+function getTransactionAmount(p: PropertyOption): number | null {
+  switch (p.deal_type) {
+    case "sale":
+      return p.sale_price;
+    case "jeonse":
+      return p.jeonse_price;
+    case "monthly":
+      if (p.deposit != null && p.monthly_rent != null) {
+        return getMonthlyRentAmount(p.deposit, p.monthly_rent);
+      }
+      return null;
+    default:
+      return null;
+  }
+}
+
 export default function ScheduleForm({
   initialData,
   scheduleId,
@@ -53,8 +76,11 @@ export default function ScheduleForm({
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
   const [useTime, setUseTime] = useState(!!initialData?.schedule_time);
   const [properties, setProperties] = useState<PropertyOption[]>([]);
+  const [amountManuallyEdited, setAmountManuallyEdited] = useState(
+    !!(initialData?.transaction_amount != null)
+  );
   const [feeManuallyEdited, setFeeManuallyEdited] = useState(
-    !!(initialData?.fee != null && initialData.fee > 0)
+    !!(initialData?.fee != null)
   );
   const { toast } = useToast();
   const isEdit = !!scheduleId;
@@ -86,8 +112,9 @@ export default function ScheduleForm({
   });
 
   const selectedCategory = watch("category");
-  const watchedAmount = watch("transaction_amount");
   const watchedPropertyId = watch("property_id");
+
+  const selectedProperty = properties.find((p) => p.id === watchedPropertyId);
 
   // active 매물 목록 로드
   useEffect(() => {
@@ -97,50 +124,66 @@ export default function ScheduleForm({
       .catch(() => setProperties([]));
   }, []);
 
-  // 거래금액 변경 시 복비 자동 계산
+  // 매물 선택 시 → 거래금액 + 복비 자동 채움
+  const autoFillFromProperty = useCallback(
+    (property: PropertyOption | undefined) => {
+      if (!property || selectedCategory !== "contract") return;
+
+      const amount = getTransactionAmount(property);
+      if (amount == null) return;
+
+      if (!amountManuallyEdited) {
+        setValue("transaction_amount", amount);
+      }
+
+      const currentAmount = amountManuallyEdited
+        ? getValues("transaction_amount")
+        : amount;
+
+      if (!feeManuallyEdited && currentAmount && !isNaN(currentAmount)) {
+        const fee = calculateFee(property.deal_type as DealType, currentAmount);
+        setValue("fee", fee);
+      }
+    },
+    [
+      selectedCategory,
+      amountManuallyEdited,
+      feeManuallyEdited,
+      setValue,
+      getValues,
+    ]
+  );
+
+  // 매물 변경 시 자동 채움
   useEffect(() => {
-    if (selectedCategory !== "contract" || !watchedAmount || feeManuallyEdited)
-      return;
-
-    const selectedProperty = properties.find(
-      (p) => p.id === watchedPropertyId
-    );
-    if (!selectedProperty) return;
-
-    const dealType = selectedProperty.deal_type as DealType;
-    let amount = watchedAmount;
-
-    // 월세인 경우 환산액 사용
-    if (
-      dealType === "monthly" &&
-      selectedProperty.deposit != null &&
-      selectedProperty.monthly_rent != null
-    ) {
-      amount = getMonthlyRentAmount(
-        selectedProperty.deposit,
-        selectedProperty.monthly_rent
-      );
-    }
-
-    const calculated = calculateFee(dealType, amount);
-    setValue("fee", calculated);
-  }, [
-    watchedAmount,
-    watchedPropertyId,
-    selectedCategory,
-    feeManuallyEdited,
-    properties,
-    setValue,
-  ]);
+    if (selectedCategory !== "contract" || !watchedPropertyId) return;
+    const prop = properties.find((p) => p.id === watchedPropertyId);
+    if (prop) autoFillFromProperty(prop);
+  }, [watchedPropertyId, properties, selectedCategory, autoFillFromProperty]);
 
   // category 변경 시 contract 전용 필드 초기화
   useEffect(() => {
     if (selectedCategory !== "contract") {
       setValue("transaction_amount", null);
       setValue("fee", null);
+      setAmountManuallyEdited(false);
       setFeeManuallyEdited(false);
     }
   }, [selectedCategory, setValue]);
+
+  // 거래금액 수동 변경 시 복비 재계산
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAmountManuallyEdited(true);
+    const val = e.target.valueAsNumber;
+
+    if (!feeManuallyEdited && selectedProperty && !isNaN(val) && val > 0) {
+      const fee = calculateFee(
+        selectedProperty.deal_type as DealType,
+        val
+      );
+      setValue("fee", fee);
+    }
+  };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,8 +194,13 @@ export default function ScheduleForm({
       const raw = getValues();
       // 시간 체크박스 OFF면 null
       if (!useTime) raw.schedule_time = null;
+      // 빈 select → null
+      if (raw.property_id === "") raw.property_id = null;
       // NaN 방어 (빈 number 입력)
-      if (typeof raw.transaction_amount === "number" && isNaN(raw.transaction_amount))
+      if (
+        typeof raw.transaction_amount === "number" &&
+        isNaN(raw.transaction_amount)
+      )
         raw.transaction_amount = null;
       if (typeof raw.fee === "number" && isNaN(raw.fee)) raw.fee = null;
 
@@ -182,7 +230,10 @@ export default function ScheduleForm({
         window.location.href = "/main?tab=calendar";
       } else {
         const body = await res.json().catch(() => null);
-        toast(body?.error || "저장에 실패했습니다. 다시 시도해주세요", "error");
+        toast(
+          body?.error || "저장에 실패했습니다. 다시 시도해주세요",
+          "error"
+        );
       }
     } catch {
       toast("네트워크 오류가 발생했습니다", "error");
@@ -192,6 +243,17 @@ export default function ScheduleForm({
   };
 
   const isContract = selectedCategory === "contract";
+
+  // 거래금액 안내 텍스트
+  const amountHint = (() => {
+    if (!isContract || !selectedProperty) return null;
+    const dt = selectedProperty.deal_type;
+    const label = DEAL_LABEL[dt] || "";
+    if (dt === "monthly" && selectedProperty.deposit != null && selectedProperty.monthly_rent != null) {
+      return `${label} (보증금 + 월세 × 100)`;
+    }
+    return `${label} 기준`;
+  })();
 
   return (
     <form onSubmit={handleFormSubmit} className="flex flex-col gap-5 pb-24">
@@ -299,14 +361,22 @@ export default function ScheduleForm({
                 id="transaction_amount"
                 type="number"
                 inputMode="numeric"
-                {...register("transaction_amount", { valueAsNumber: true })}
-                placeholder="예: 15000"
+                {...register("transaction_amount", {
+                  valueAsNumber: true,
+                  onChange: handleAmountChange,
+                })}
+                placeholder="매물 선택 시 자동 입력"
                 className="h-[52px] text-base pr-14"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-base">
                 만원
               </span>
             </div>
+            {amountHint && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {amountHint}
+              </p>
+            )}
           </Field>
 
           <Field label="중개보수" htmlFor="fee" error={serverErrors.fee}>
@@ -326,7 +396,7 @@ export default function ScheduleForm({
                 만원
               </span>
             </div>
-            {!feeManuallyEdited && watchedAmount && (
+            {!feeManuallyEdited && selectedProperty && (
               <p className="text-sm text-muted-foreground mt-1">
                 법정 상한요율 기준 자동 계산
               </p>
