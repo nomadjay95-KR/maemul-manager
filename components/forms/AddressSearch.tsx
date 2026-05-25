@@ -51,7 +51,6 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<unknown>(null);
   const markerRef = useRef<unknown>(null);
-  const [sdkLoaded, setSdkLoaded] = useState(false);
   const [address, setAddress] = useState(value);
 
   const handleSearch = () => {
@@ -80,28 +79,18 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
     setAddress(value);
   }, [value]);
 
-  // SDK 로드 대기
+  // 주소 변경 시 지도 렌더링 — kakao SDK 폴링 대기 후 실행
   useEffect(() => {
-    const waitForKakao = () => {
-      if (window.kakao?.maps) {
-        window.kakao.maps.load(() => setSdkLoaded(true));
-      } else {
-        setTimeout(waitForKakao, 300);
-      }
-    };
-    waitForKakao();
-  }, []);
+    if (!address) return;
 
-  // 주소 변경 시 지도 렌더링 — 컨테이너가 visible 된 후 실행
-  useEffect(() => {
-    if (!sdkLoaded || !address) return;
+    let cancelled = false;
 
-    // requestAnimationFrame으로 DOM 렌더링 완료 후 실행
-    const rafId = requestAnimationFrame(() => {
+    const renderMap = () => {
       if (!mapRef.current) return;
 
       const geocoder = new window.kakao.maps.services.Geocoder();
       geocoder.addressSearch(address, (result, status) => {
+        if (cancelled) return;
         if (status !== window.kakao.maps.services.Status.OK) return;
 
         const coords = new window.kakao.maps.LatLng(
@@ -130,10 +119,28 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
           marker.setPosition(coords);
         }
       });
-    });
+    };
 
-    return () => cancelAnimationFrame(rafId);
-  }, [sdkLoaded, address]);
+    // kakao SDK가 준비될 때까지 100ms 간격으로 폴링
+    const pollKakao = () => {
+      if (cancelled) return;
+      if (window.kakao?.maps?.services) {
+        renderMap();
+      } else if (window.kakao?.maps) {
+        window.kakao.maps.load(() => {
+          if (!cancelled) renderMap();
+        });
+      } else {
+        setTimeout(pollKakao, 100);
+      }
+    };
+
+    pollKakao();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
 
   return (
     <div className="space-y-2">
@@ -152,13 +159,15 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
           주소 찾기
         </button>
       </div>
-      {address && (
-        <div
-          ref={mapRef}
-          style={{ width: "100%", height: "200px" }}
-          className="rounded-lg overflow-hidden border border-border"
-        />
-      )}
+      <div
+        ref={mapRef}
+        style={{
+          width: "100%",
+          height: "200px",
+          display: address ? "block" : "none",
+        }}
+        className="rounded-lg overflow-hidden border border-border"
+      />
     </div>
   );
 }
