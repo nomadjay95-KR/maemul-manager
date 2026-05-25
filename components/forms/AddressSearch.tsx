@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 
 declare global {
@@ -47,6 +47,42 @@ interface AddressSearchProps {
   onChange: (address: string) => void;
 }
 
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing) {
+      resolve();
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+let kakaoMapsReady: Promise<void> | null = null;
+
+function ensureKakaoMaps(): Promise<void> {
+  if (kakaoMapsReady) return kakaoMapsReady;
+
+  kakaoMapsReady = (async () => {
+    const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+    if (!key) throw new Error("NEXT_PUBLIC_KAKAO_JS_KEY is not set");
+
+    await loadScript(
+      `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&libraries=services&autoload=false`
+    );
+
+    await new Promise<void>((resolve) => {
+      window.kakao.maps.load(() => resolve());
+    });
+  })();
+
+  return kakaoMapsReady;
+}
+
 export default function AddressSearch({ value, onChange }: AddressSearchProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<unknown>(null);
@@ -67,30 +103,18 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
     if (window.daum?.Postcode) {
       open();
     } else {
-      const script = document.createElement("script");
-      script.src = "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
-      script.onload = open;
-      document.head.appendChild(script);
+      loadScript(
+        "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
+      ).then(open);
     }
   };
 
-  // 외부 value 변경 동기화
-  useEffect(() => {
-    setAddress(value);
-  }, [value]);
+  const renderMap = useCallback((addr: string) => {
+    if (!mapRef.current) return;
 
-  // 주소 변경 시 지도 렌더링 — kakao SDK 폴링 대기 후 실행
-  useEffect(() => {
-    if (!address) return;
-
-    let cancelled = false;
-
-    const renderMap = () => {
-      if (!mapRef.current) return;
-
+    ensureKakaoMaps().then(() => {
       const geocoder = new window.kakao.maps.services.Geocoder();
-      geocoder.addressSearch(address, (result, status) => {
-        if (cancelled) return;
+      geocoder.addressSearch(addr, (result, status) => {
         if (status !== window.kakao.maps.services.Status.OK) return;
 
         const coords = new window.kakao.maps.LatLng(
@@ -119,28 +143,19 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
           marker.setPosition(coords);
         }
       });
-    };
+    });
+  }, []);
 
-    // kakao SDK가 준비될 때까지 100ms 간격으로 폴링
-    const pollKakao = () => {
-      if (cancelled) return;
-      if (window.kakao?.maps?.services) {
-        renderMap();
-      } else if (window.kakao?.maps) {
-        window.kakao.maps.load(() => {
-          if (!cancelled) renderMap();
-        });
-      } else {
-        setTimeout(pollKakao, 100);
-      }
-    };
+  // 외부 value 변경 동기화
+  useEffect(() => {
+    setAddress(value);
+  }, [value]);
 
-    pollKakao();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [address]);
+  // 주소 변경 시 지도 렌더링
+  useEffect(() => {
+    if (!address) return;
+    renderMap(address);
+  }, [address, renderMap]);
 
   return (
     <div className="space-y-2">
