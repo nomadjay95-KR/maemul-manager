@@ -113,22 +113,27 @@ export async function updateProperty(
     return { error: "매물 수정에 실패했습니다." };
   }
 
-  // 삭제된 이미지 처리
-  for (const imageId of deletedImageIds) {
-    const { data: img } = await supabase
+  // 삭제된 이미지 처리 (일괄 조회 + 일괄 삭제)
+  if (deletedImageIds.length > 0) {
+    const { data: images } = await supabase
       .from("property_images")
-      .select("image_url")
-      .eq("id", imageId)
-      .single();
+      .select("id, image_url")
+      .in("id", deletedImageIds);
 
-    if (img) {
-      const pathMatch = img.image_url.match(/property-photos\/(.+)$/);
-      if (pathMatch) {
-        await supabase.storage.from("property-photos").remove([pathMatch[1]]);
+    if (images && images.length > 0) {
+      const storagePaths = images
+        .map((img) => img.image_url.match(/property-photos\/(.+)$/)?.[1])
+        .filter((p): p is string => !!p);
+
+      if (storagePaths.length > 0) {
+        await supabase.storage.from("property-photos").remove(storagePaths);
       }
-    }
 
-    await supabase.from("property_images").delete().eq("id", imageId);
+      await supabase
+        .from("property_images")
+        .delete()
+        .in("id", deletedImageIds);
+    }
   }
 
   // 새 이미지 업로드

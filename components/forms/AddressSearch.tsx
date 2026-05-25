@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/Toast";
 
 declare global {
   interface Window {
@@ -68,17 +69,22 @@ function ensureKakaoMaps(): Promise<void> {
   if (kakaoMapsReady) return kakaoMapsReady;
 
   kakaoMapsReady = (async () => {
-    const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
-    if (!key) throw new Error("NEXT_PUBLIC_KAKAO_JS_KEY is not set");
+    try {
+      const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+      if (!key) throw new Error("NEXT_PUBLIC_KAKAO_JS_KEY is not set");
 
-    await loadScript(
-      `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&libraries=services&autoload=false`,
-      "kakao-map-sdk"
-    );
+      await loadScript(
+        `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&libraries=services&autoload=false`,
+        "kakao-map-sdk"
+      );
 
-    await new Promise<void>((resolve) => {
-      window.kakao.maps.load(() => resolve());
-    });
+      await new Promise<void>((resolve) => {
+        window.kakao.maps.load(() => resolve());
+      });
+    } catch (err) {
+      kakaoMapsReady = null;
+      throw err;
+    }
   })();
 
   return kakaoMapsReady;
@@ -89,6 +95,7 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
   const mapInstanceRef = useRef<unknown>(null);
   const markerRef = useRef<unknown>(null);
   const [address, setAddress] = useState(value);
+  const { toast } = useToast();
 
   const handleSearch = () => {
     const open = () => {
@@ -107,14 +114,19 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
       loadScript(
         "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js",
         "daum-postcode-sdk"
-      ).then(open);
+      )
+        .then(open)
+        .catch(() => {
+          toast("주소 검색 기능을 불러올 수 없습니다. 페이지를 새로고침 해주세요", "error");
+        });
     }
   };
 
   const renderMap = useCallback((addr: string) => {
     if (!mapRef.current) return;
 
-    ensureKakaoMaps().then(() => {
+    ensureKakaoMaps()
+    .then(() => {
       const geocoder = new window.kakao.maps.services.Geocoder();
       geocoder.addressSearch(addr, (result, status) => {
         if (status !== window.kakao.maps.services.Status.OK) return;
@@ -145,6 +157,9 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
           marker.setPosition(coords);
         }
       });
+    })
+    .catch(() => {
+      // 지도 로드 실패는 조용히 무시 (주소 검색은 이미 완료됨)
     });
   }, []);
 

@@ -2,17 +2,21 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { fetchProperties } from "@/lib/queries/properties";
 import { fetchInquiries } from "@/lib/queries/inquiries";
-import type {
-  PropertyStatus,
-  PropertyType,
-  InquiryStatus,
-} from "@/types/property";
 import PropertyFilter from "@/components/properties/PropertyFilter";
 import PropertyCard from "@/components/properties/PropertyCard";
 import InquiryFilter from "@/components/inquiries/InquiryFilter";
 import InquiryCard from "@/components/inquiries/InquiryCard";
 import LockButton from "@/components/properties/LockButton";
 import TabNav from "@/components/layout/TabNav";
+
+const VALID_PROPERTY_STATUS = ["active", "reserved", "completed"] as const;
+const VALID_PROPERTY_TYPE = ["villa", "shop"] as const;
+const VALID_INQUIRY_STATUS = ["active", "resolved"] as const;
+
+function parseEnum<T extends string>(value: string | undefined, valid: readonly T[]): T | undefined {
+  if (!value) return undefined;
+  return valid.includes(value as T) ? (value as T) : undefined;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -88,8 +92,8 @@ async function PropertiesTab({
   orderBy?: string;
 }) {
   const properties = await fetchProperties({
-    status: (status as PropertyStatus) || undefined,
-    type: (type as PropertyType) || undefined,
+    status: parseEnum(status, VALID_PROPERTY_STATUS),
+    type: parseEnum(type, VALID_PROPERTY_TYPE),
     search: search || undefined,
     orderBy: orderBy || undefined,
   });
@@ -125,7 +129,7 @@ async function InquiriesTab({
   orderBy?: string;
 }) {
   const inquiries = await fetchInquiries({
-    status: (status as InquiryStatus) || undefined,
+    status: parseEnum(status, VALID_INQUIRY_STATUS),
     search: search || undefined,
     orderBy: orderBy || undefined,
   });
