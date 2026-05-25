@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { fetchProperties } from "@/lib/queries/properties";
 import { fetchInquiries } from "@/lib/queries/inquiries";
+import { fetchSchedulesByMonth } from "@/lib/queries/schedules";
 import PropertyFilter from "@/components/properties/PropertyFilter";
 import PropertyCard from "@/components/properties/PropertyCard";
 import InquiryFilter from "@/components/inquiries/InquiryFilter";
@@ -9,6 +10,7 @@ import InquiryCard from "@/components/inquiries/InquiryCard";
 import LockButton from "@/components/properties/LockButton";
 import TabNav from "@/components/layout/TabNav";
 import EmptyState from "@/components/ui/EmptyState";
+import CalendarView from "@/components/calendar/CalendarView";
 
 const VALID_PROPERTY_STATUS = ["active", "reserved", "completed"] as const;
 const VALID_PROPERTY_TYPE = ["villa", "shop"] as const;
@@ -28,19 +30,32 @@ interface PageProps {
     type?: string;
     search?: string;
     orderBy?: string;
+    year?: string;
+    month?: string;
   }>;
 }
 
 export default async function MainPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const tab = params.tab === "inquiries" ? "inquiries" : "properties";
+  const tab =
+    params.tab === "inquiries"
+      ? "inquiries"
+      : params.tab === "calendar"
+        ? "calendar"
+        : "properties";
+
+  const TAB_TITLES = {
+    properties: "매물장",
+    inquiries: "문의장",
+    calendar: "캘린더",
+  } as const;
 
   return (
     <main className="min-h-screen bg-white px-4 sm:px-6 pt-4 pb-28 max-w-3xl mx-auto">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-xl font-bold text-foreground">
-          {tab === "properties" ? "매물장" : "문의장"}
+          {TAB_TITLES[tab]}
         </h1>
         <LockButton />
       </div>
@@ -59,24 +74,28 @@ export default async function MainPage({ searchParams }: PageProps) {
             search={params.search}
             orderBy={params.orderBy}
           />
-        ) : (
+        ) : tab === "inquiries" ? (
           <InquiriesTab
             status={params.status}
             search={params.search}
             orderBy={params.orderBy}
           />
+        ) : (
+          <CalendarTab year={params.year} month={params.month} />
         )}
       </div>
 
-      {/* 하단 고정 등록 버튼 */}
-      <div className="fixed bottom-6 left-4 right-4 z-40 flex justify-center">
-        <Link
-          href={tab === "properties" ? "/properties/new" : "/inquiries/new"}
-          className="block w-full max-w-[400px] h-[52px] rounded-xl text-[17px] font-bold bg-primary text-white hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center justify-center"
-        >
-          {tab === "properties" ? "+ 매물 등록" : "+ 문의 등록"}
-        </Link>
-      </div>
+      {/* 하단 고정 등록 버튼 (캘린더 탭에서는 숨김) */}
+      {tab !== "calendar" && (
+        <div className="fixed bottom-6 left-4 right-4 z-40 flex justify-center">
+          <Link
+            href={tab === "properties" ? "/properties/new" : "/inquiries/new"}
+            className="block w-full max-w-[400px] h-[52px] rounded-xl text-[17px] font-bold bg-primary text-white hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center justify-center"
+          >
+            {tab === "properties" ? "+ 매물 등록" : "+ 문의 등록"}
+          </Link>
+        </div>
+      )}
     </main>
   );
 }
@@ -148,4 +167,20 @@ async function InquiriesTab({
       </div>
     </>
   );
+}
+
+async function CalendarTab({
+  year,
+  month,
+}: {
+  year?: string;
+  month?: string;
+}) {
+  const now = new Date();
+  const y = year ? parseInt(year, 10) : now.getFullYear();
+  const m = month ? parseInt(month, 10) : now.getMonth() + 1;
+
+  const schedules = await fetchSchedulesByMonth(y, m);
+
+  return <CalendarView year={y} month={m} schedules={schedules} />;
 }

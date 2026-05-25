@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { value: "properties", label: "매물장" },
   { value: "inquiries", label: "문의장" },
+  { value: "calendar", label: "캘린더" },
 ] as const;
 
 export default function TabNav() {
