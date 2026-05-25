@@ -8,36 +8,11 @@ import {
 } from "@/lib/validations/inquiry";
 import type { Inquiry } from "@/types/property";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import Field from "./Field";
 import { useToast } from "@/components/ui/Toast";
-
-function Field({
-  label,
-  htmlFor,
-  error,
-  required,
-  children,
-}: {
-  label: string;
-  htmlFor?: string;
-  error?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={htmlFor} className="text-base font-bold">
-        {label}
-        {required && <span className="text-destructive ml-1 text-sm font-medium">필수</span>}
-      </Label>
-      {children}
-      {error && <p className="text-base text-destructive font-medium">{error}</p>}
-    </div>
-  );
-}
 
 interface InquiryFormProps {
   initialData?: Inquiry;

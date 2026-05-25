@@ -5,21 +5,12 @@ import { DEAL_LABEL, formatPrice } from "@/lib/format/property";
 import InquiryStatusChanger from "@/components/inquiries/InquiryStatusChanger";
 import DeleteInquiryButton from "@/components/inquiries/DeleteInquiryButton";
 import PropertyCard from "@/components/properties/PropertyCard";
+import InfoRow from "@/components/ui/InfoRow";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-}
-
-function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
-  if (!value) return null;
-  return (
-    <div className="flex justify-between py-3 border-b border-border last:border-b-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-base font-medium text-foreground">{value}</span>
-    </div>
-  );
 }
 
 export default async function InquiryDetailPage({ params }: PageProps) {

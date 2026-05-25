@@ -3,16 +3,7 @@ import type { PropertyWithImages } from "@/types/property";
 import { TypeBadge, StatusBadge } from "./StatusBadge";
 import { formatPrice, getPriceText, DEAL_LABEL } from "@/lib/format/property";
 import AddressMap from "./AddressMap";
-
-function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
-  if (!value) return null;
-  return (
-    <div className="flex justify-between py-3 border-b border-border last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-base font-medium text-foreground">{value}</span>
-    </div>
-  );
-}
+import InfoRow from "@/components/ui/InfoRow";
 
 export default function PropertyDetail({ property }: { property: PropertyWithImages }) {
   const p = property;

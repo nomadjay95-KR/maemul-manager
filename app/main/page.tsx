@@ -8,6 +8,7 @@ import InquiryFilter from "@/components/inquiries/InquiryFilter";
 import InquiryCard from "@/components/inquiries/InquiryCard";
 import LockButton from "@/components/properties/LockButton";
 import TabNav from "@/components/layout/TabNav";
+import EmptyState from "@/components/ui/EmptyState";
 
 const VALID_PROPERTY_STATUS = ["active", "reserved", "completed"] as const;
 const VALID_PROPERTY_TYPE = ["villa", "shop"] as const;
@@ -105,10 +106,7 @@ async function PropertiesTab({
       </Suspense>
       <div className="mt-4 flex flex-col gap-3">
         {properties.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <p className="text-lg font-medium">매물이 없습니다</p>
-            <p className="text-sm mt-1">새 매물을 등록해보세요.</p>
-          </div>
+          <EmptyState title="매물이 없습니다" description="새 매물을 등록해보세요." />
         ) : (
           properties.map((property) => (
             <PropertyCard key={property.id} property={property} />
@@ -141,10 +139,7 @@ async function InquiriesTab({
       </Suspense>
       <div className="mt-4 flex flex-col gap-3">
         {inquiries.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <p className="text-lg font-medium">문의가 없습니다</p>
-            <p className="text-sm mt-1">새 문의를 등록해보세요.</p>
-          </div>
+          <EmptyState title="문의가 없습니다" description="새 문의를 등록해보세요." />
         ) : (
           inquiries.map((inquiry) => (
             <InquiryCard key={inquiry.id} inquiry={inquiry} />

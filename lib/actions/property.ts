@@ -1,12 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { getSupabase } from "@/lib/supabase";
 import { propertySchema } from "@/lib/validations/property";
-
-function cleanData(data: Record<string, unknown>) {
-  return Object.fromEntries(
-    Object.entries(data).map(([k, v]) => [k, v === "" ? null : v])
-  );
-}
+import { cleanData } from "@/lib/utils";
 
 async function uploadImages(
   propertyId: string,

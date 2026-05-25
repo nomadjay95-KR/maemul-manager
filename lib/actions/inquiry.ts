@@ -1,13 +1,8 @@
 import { revalidatePath } from "next/cache";
 import { getSupabase } from "@/lib/supabase";
 import { inquirySchema } from "@/lib/validations/inquiry";
+import { cleanData } from "@/lib/utils";
 import type { InquiryStatus } from "@/types/property";
-
-function cleanData(data: Record<string, unknown>) {
-  return Object.fromEntries(
-    Object.entries(data).map(([k, v]) => [k, v === "" ? null : v])
-  );
-}
 
 export async function createInquiry(
   data: Record<string, unknown>
