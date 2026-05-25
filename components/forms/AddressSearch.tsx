@@ -55,17 +55,24 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
   const [address, setAddress] = useState(value);
 
   const handleSearch = () => {
-    if (!window.daum?.Postcode) {
-      alert("주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
-      return;
+    const open = () => {
+      new window.daum.Postcode({
+        oncomplete: (data) => {
+          const addr = data.roadAddress || data.address;
+          onChange(addr);
+          setAddress(addr);
+        },
+      }).open();
+    };
+
+    if (window.daum?.Postcode) {
+      open();
+    } else {
+      const script = document.createElement("script");
+      script.src = "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+      script.onload = open;
+      document.head.appendChild(script);
     }
-    new window.daum.Postcode({
-      oncomplete: (data) => {
-        const addr = data.roadAddress || data.address;
-        onChange(addr);
-        setAddress(addr);
-      },
-    }).open();
   };
 
   // 외부 value 변경 동기화
