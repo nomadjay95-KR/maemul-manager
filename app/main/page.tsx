@@ -1,38 +1,43 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { fetchProperties } from "@/lib/queries/properties";
-
-export const dynamic = "force-dynamic";
-import type { PropertyStatus, PropertyType } from "@/types/property";
+import { fetchInquiries } from "@/lib/queries/inquiries";
+import type {
+  PropertyStatus,
+  PropertyType,
+  InquiryStatus,
+} from "@/types/property";
 import PropertyFilter from "@/components/properties/PropertyFilter";
 import PropertyCard from "@/components/properties/PropertyCard";
+import InquiryFilter from "@/components/inquiries/InquiryFilter";
+import InquiryCard from "@/components/inquiries/InquiryCard";
 import LockButton from "@/components/properties/LockButton";
+import TabNav from "@/components/layout/TabNav";
+
+export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: Promise<{ status?: string; type?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    status?: string;
+    type?: string;
+  }>;
 }
 
-export default async function Home({ searchParams }: PageProps) {
+export default async function MainPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const status = (params.status as PropertyStatus) || undefined;
-  const type = (params.type as PropertyType) || undefined;
-
-  const properties = await fetchProperties({ status, type });
+  const tab = params.tab === "inquiries" ? "inquiries" : "properties";
 
   return (
     <main className="min-h-screen bg-background px-4 py-6 max-w-2xl mx-auto">
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-foreground">매물 목록</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold text-foreground">
+          {tab === "properties" ? "매물장" : "문의장"}
+        </h1>
         <div className="flex gap-2">
           <Link
-            href="/inquiries"
-            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-muted text-muted-foreground hover:bg-accent transition-colors"
-          >
-            문의
-          </Link>
-          <Link
-            href="/properties/new"
+            href={tab === "properties" ? "/properties/new" : "/inquiries/new"}
             className="px-3 py-1.5 rounded-lg text-sm font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
           >
             + 등록
@@ -41,12 +46,38 @@ export default async function Home({ searchParams }: PageProps) {
         </div>
       </div>
 
-      {/* 필터 */}
+      {/* 탭 */}
+      <Suspense fallback={null}>
+        <TabNav />
+      </Suspense>
+
+      {/* 탭 콘텐츠 */}
+      {tab === "properties" ? (
+        <PropertiesTab status={params.status} type={params.type} />
+      ) : (
+        <InquiriesTab status={params.status} />
+      )}
+    </main>
+  );
+}
+
+async function PropertiesTab({
+  status,
+  type,
+}: {
+  status?: string;
+  type?: string;
+}) {
+  const properties = await fetchProperties({
+    status: (status as PropertyStatus) || undefined,
+    type: (type as PropertyType) || undefined,
+  });
+
+  return (
+    <>
       <Suspense fallback={null}>
         <PropertyFilter />
       </Suspense>
-
-      {/* 매물 리스트 */}
       <div className="mt-4 flex flex-col gap-3">
         {properties.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
@@ -59,6 +90,32 @@ export default async function Home({ searchParams }: PageProps) {
           ))
         )}
       </div>
-    </main>
+    </>
+  );
+}
+
+async function InquiriesTab({ status }: { status?: string }) {
+  const inquiries = await fetchInquiries({
+    status: (status as InquiryStatus) || undefined,
+  });
+
+  return (
+    <>
+      <Suspense fallback={null}>
+        <InquiryFilter />
+      </Suspense>
+      <div className="mt-4 flex flex-col gap-3">
+        {inquiries.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+            <p className="text-lg font-medium">문의가 없습니다</p>
+            <p className="text-sm mt-1">새 문의를 등록해보세요.</p>
+          </div>
+        ) : (
+          inquiries.map((inquiry) => (
+            <InquiryCard key={inquiry.id} inquiry={inquiry} />
+          ))
+        )}
+      </div>
+    </>
   );
 }

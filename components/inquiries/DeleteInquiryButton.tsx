@@ -15,7 +15,7 @@ export default function DeleteInquiryButton({ inquiryId }: { inquiryId: string }
       });
 
       if (res.ok) {
-        window.location.href = "/inquiries";
+        window.location.href = "/main?tab=inquiries";
       } else {
         const body = await res.json().catch(() => null);
         alert(`삭제 실패: ${body?.error || res.statusText}`);

@@ -32,6 +32,7 @@ export default function PropertyFilter() {
       } else {
         params.delete(key);
       }
+      params.set("tab", "properties");
       router.push(`/main?${params.toString()}`);
     },
     [router, searchParams]

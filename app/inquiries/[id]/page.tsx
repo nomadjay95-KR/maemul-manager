@@ -54,7 +54,7 @@ export default async function InquiryDetailPage({ params }: PageProps) {
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <Link
-          href="/inquiries"
+          href="/main?tab=inquiries"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           ← 문의 목록

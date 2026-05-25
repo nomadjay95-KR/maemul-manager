@@ -24,7 +24,8 @@ export default function InquiryFilter() {
       } else {
         params.delete("status");
       }
-      router.push(`/inquiries?${params.toString()}`);
+      params.set("tab", "inquiries");
+      router.push(`/main?${params.toString()}`);
     },
     [router, searchParams]
   );

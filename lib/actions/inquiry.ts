@@ -32,7 +32,7 @@ export async function createInquiry(
     return { error: "문의 등록에 실패했습니다." };
   }
 
-  revalidatePath("/inquiries");
+  revalidatePath("/main");
 
   return { id: inquiry.id };
 }
@@ -60,7 +60,7 @@ export async function updateInquiry(
     return { error: "문의 수정에 실패했습니다." };
   }
 
-  revalidatePath("/inquiries");
+  revalidatePath("/main");
   revalidatePath(`/inquiries/${id}`);
 
   return { id };
@@ -82,7 +82,7 @@ export async function updateInquiryStatus(
     return false;
   }
 
-  revalidatePath("/inquiries");
+  revalidatePath("/main");
   revalidatePath(`/inquiries/${id}`);
 
   return true;
@@ -100,7 +100,7 @@ export async function deleteInquiry(
     return { error: "문의 삭제에 실패했습니다." };
   }
 
-  revalidatePath("/inquiries");
+  revalidatePath("/main");
 
   return { success: true };
 }
