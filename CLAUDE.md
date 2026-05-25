@@ -37,11 +37,20 @@ npm run lint     # ESLint
 ### Key Directories
 
 - `/lib/actions/` — Server Actions (property, inquiry CRUD)
-- `/lib/queries/` — 서버 데이터 조회 함수
+- `/lib/queries/` — 서버 데이터 조회 함수 (검색/정렬 지원)
 - `/lib/validations/` — Zod 스키마
-- `/components/forms/` — PropertyForm, InquiryForm, ImageUpload, AddressSearch
+- `/lib/format/` — 가격 포맷, 라벨 매핑 유틸
+- `/components/forms/` — PropertyForm, InquiryForm, ImageUpload, AddressSearch, Field
+- `/components/ui/` — shadcn 컴포넌트 + Toast, InfoRow, EmptyState
 - `/types/` — TypeScript 타입 정의
 - `/supabase/migrations/` — DB 마이그레이션 SQL
+
+### Shared Components (리팩터링 추출)
+
+- `components/forms/Field.tsx` — 폼 필드 래퍼 (label, error, required 표시). PropertyForm, InquiryForm 공유.
+- `components/ui/InfoRow.tsx` — 상세 페이지 key-value 행. PropertyDetail, InquiryDetail 공유.
+- `components/ui/EmptyState.tsx` — 빈 목록 표시. 메인 페이지 매물/문의 탭 공유.
+- `lib/utils.ts` → `cleanData()` — 빈 문자열을 null로 변환. property, inquiry actions 공유.
 
 ### Auth
 
@@ -53,8 +62,21 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 
 ### External APIs
 
-- **카카오 주소/지도**: `NEXT_PUBLIC_KAKAO_JS_KEY` 환경변수. `next/script`로 SDK 로드 (`app/layout.tsx`). `AddressSearch.tsx`에서 다음 우편번호 + 카카오맵 연동.
+- **카카오 주소/지도**: `NEXT_PUBLIC_KAKAO_JS_KEY` 환경변수. SDK는 동적 로딩 (`ensureKakaoMaps()` 싱글턴, `autoload=false` + `kakao.maps.load()`). `AddressSearch.tsx`에서 다음 우편번호 + 카카오맵 연동. `AddressMap.tsx`에서 상세 페이지 읽기 전용 지도 표시.
+- **카카오톡 공유**: `layout.tsx`에서 `kakao.min.js` 로드. `ShareButtons.tsx`에서 `Kakao.Share.sendDefault` 호출. 카카오 개발자센터에서 플랫폼 도메인 등록 필수.
 - **Supabase Storage**: `property-photos` 버킷 (public). 이미지 업로드 시 Buffer 변환 필요.
+
+### 검색/정렬
+
+- 매물: 주소 ilike 검색, 보증금순/상태순/최신순 정렬
+- 문의: 이름/연락처 or ilike 검색, 문의일순/최신순 정렬
+- URL searchParams로 서버 사이드 처리, `parseEnum()`으로 런타임 검증
+
+### Toast 알림
+
+- `components/ui/Toast.tsx` — Context 기반, `useToast()` 훅
+- 성공(초록)/실패(빨강), 2초 자동 사라짐, 화면 상단 중앙
+- 저장/수정/삭제/상태변경 모든 작업에 적용
 
 ### CSP
 
@@ -89,4 +111,6 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 - `react-hook-form` + Zod로 폼 검증
 - `cn()` 유틸리티로 조건부 Tailwind 클래스
 - 영문 코드/변수명, 한국어 UI 텍스트/주석
+- 에러 발생 시 `alert()` 대신 `toast()` 사용
+- 5060 UX: 최소 text-base(16px), 버튼 h-[52px], 필수 필드 "필수" 텍스트 표시
 - 배포: `git push origin main` → Vercel 자동 배포, 또는 `vercel --prod`
