@@ -29,12 +29,12 @@ function Field({
 }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={htmlFor} className="text-[15px] font-bold">
+      <Label htmlFor={htmlFor} className="text-base font-bold">
         {label}
-        {required && <span className="text-destructive ml-0.5">*</span>}
+        {required && <span className="text-destructive ml-1 text-sm font-medium">필수</span>}
       </Label>
       {children}
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-base text-destructive font-medium">{error}</p>}
     </div>
   );
 }
@@ -245,7 +245,10 @@ export default function InquiryForm({
       {/* 제출 — 하단 고정 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border p-4 z-40">
         <div className="max-w-3xl mx-auto">
-          <Button type="submit" disabled={submitting} className="w-full h-14 text-lg">
+          <Button type="submit" disabled={submitting} className="w-full h-14 text-lg flex items-center justify-center gap-2">
+            {submitting && (
+              <span className="inline-block h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            )}
             {submitting
               ? isEdit
                 ? "수정 중..."

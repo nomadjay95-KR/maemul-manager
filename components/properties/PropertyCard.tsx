@@ -22,14 +22,14 @@ export default function PropertyCard({ property }: { property: Property }) {
 
       {/* 가격 */}
       <p className="text-xl font-bold text-primary mt-1">
-        <span className="text-sm font-normal text-muted-foreground mr-1">
+        <span className="text-base font-normal text-gray-600 mr-1">
           {DEAL_LABEL[p.deal_type]}
         </span>
         {getPriceText(p)}
       </p>
 
       {/* 세부 정보 */}
-      <div className="flex gap-3 mt-3 text-sm text-muted-foreground">
+      <div className="flex gap-3 mt-3 text-base text-gray-600">
         {p.type === "villa" ? (
           <>
             {p.rooms != null && <span>방 {p.rooms}개</span>}

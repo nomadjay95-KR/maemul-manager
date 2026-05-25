@@ -34,7 +34,7 @@ export default function InquiryCard({ inquiry }: { inquiry: Inquiry }) {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
           <span className="text-base font-bold text-foreground">{q.name}</span>
-          <span className="text-sm text-muted-foreground">{q.phone}</span>
+          <span className="text-base text-gray-600">{q.phone}</span>
         </div>
         <span className={cn("h-7 inline-flex items-center px-2.5 rounded text-[13px] font-semibold", statusConfig.className)}>
           {statusConfig.label}
@@ -42,14 +42,14 @@ export default function InquiryCard({ inquiry }: { inquiry: Inquiry }) {
       </div>
 
       {conditions.length > 0 && (
-        <p className="text-[15px] text-muted-foreground">{conditions.join(" · ")}</p>
+        <p className="text-base text-gray-600">{conditions.join(" · ")}</p>
       )}
 
       {q.request_details && (
-        <p className="text-[15px] text-muted-foreground mt-1 truncate">{q.request_details}</p>
+        <p className="text-base text-gray-600 mt-1 truncate">{q.request_details}</p>
       )}
 
-      <p className="text-sm text-muted-foreground mt-3">{q.inquiry_date}</p>
+      <p className="text-base text-gray-500 mt-3">{q.inquiry_date}</p>
     </Link>
   );
 }
