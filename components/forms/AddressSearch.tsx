@@ -47,14 +47,14 @@ interface AddressSearchProps {
   onChange: (address: string) => void;
 }
 
-function loadScript(src: string): Promise<void> {
+function loadScript(src: string, id: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[src="${src}"]`);
-    if (existing) {
+    if (document.getElementById(id)) {
       resolve();
       return;
     }
     const script = document.createElement("script");
+    script.id = id;
     script.src = src;
     script.onload = () => resolve();
     script.onerror = () => reject(new Error(`Failed to load ${src}`));
@@ -72,7 +72,8 @@ function ensureKakaoMaps(): Promise<void> {
     if (!key) throw new Error("NEXT_PUBLIC_KAKAO_JS_KEY is not set");
 
     await loadScript(
-      `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&libraries=services&autoload=false`
+      `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&libraries=services&autoload=false`,
+      "kakao-map-sdk"
     );
 
     await new Promise<void>((resolve) => {
@@ -104,7 +105,8 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
       open();
     } else {
       loadScript(
-        "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
+        "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js",
+        "daum-postcode-sdk"
       ).then(open);
     }
   };
