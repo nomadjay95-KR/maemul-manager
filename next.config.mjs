@@ -14,7 +14,11 @@ const nextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "script-src 'self' 'unsafe-inline';",
+            value: [
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://t1.daumcdn.net https://dapi.kakao.com",
+              "frame-src 'self' https://postcode.map.daum.net",
+              "img-src 'self' data: blob: https://*.daumcdn.net https://map.kakao.com https://*.supabase.co",
+            ].join("; ") + ";",
           },
         ],
       },
