@@ -155,15 +155,17 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('property-photos', 'property-photos', true)
 ON CONFLICT (id) DO NOTHING;
 
--- Storage 정책: 누구나 읽기, anon도 업로드/삭제 가능
-CREATE POLICY "Public read access for property-photos"
+-- Storage 정책: anon role에 읽기/업로드/삭제 권한 부여
+CREATE POLICY "property-photos-select"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'property-photos');
 
-CREATE POLICY "Allow upload to property-photos"
+CREATE POLICY "property-photos-insert"
   ON storage.objects FOR INSERT
+  TO anon
   WITH CHECK (bucket_id = 'property-photos');
 
-CREATE POLICY "Allow delete from property-photos"
+CREATE POLICY "property-photos-delete"
   ON storage.objects FOR DELETE
+  TO anon
   USING (bucket_id = 'property-photos');
