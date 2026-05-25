@@ -80,16 +80,16 @@ const STEPS = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#2C2C2C]">
+    <div className="min-h-screen bg-white text-[#212121]">
       {/* 네비게이션 */}
-      <nav className="sticky top-0 z-50 bg-[#FAF7F2]/80 backdrop-blur-md border-b border-[#E8E0D4]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <span className="text-lg font-bold tracking-tight">
             하나부동산 매물장
           </span>
           <Link
             href="/lock"
-            className="px-5 py-2 rounded-full text-sm font-semibold bg-[#2C2C2C] text-[#FAF7F2] hover:bg-[#444] transition-colors"
+            className="h-12 px-6 inline-flex items-center rounded-xl text-[15px] font-bold bg-[#0066FF] text-white hover:bg-[#0052CC] transition-colors"
           >
             시작하기
           </Link>
@@ -98,14 +98,14 @@ export default function LandingPage() {
 
       {/* 헤로 섹션 */}
       <section className="relative overflow-hidden">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 sm:pt-28 sm:pb-32 lg:pt-36 lg:pb-40">
-          <div className="max-w-2xl mx-auto text-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
+          <div className="max-w-xl mx-auto text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
               우리 매물,
               <br />
-              <span className="text-[#B8860B]">한눈에</span> 관리하세요
+              <span className="text-[#0066FF]">한눈에</span> 관리하세요
             </h1>
-            <p className="mt-6 text-lg sm:text-xl text-[#6B6B6B] leading-relaxed">
+            <p className="mt-6 text-lg sm:text-xl text-gray-500 leading-relaxed">
               빌라·상가 매물 등록부터 고객 문의 매칭까지
               <br className="hidden sm:block" />
               부동산 업무를 하나로 통합합니다
@@ -113,7 +113,7 @@ export default function LandingPage() {
             <div className="mt-10">
               <Link
                 href="/lock"
-                className="inline-block px-8 py-4 rounded-full text-base font-semibold bg-[#2C2C2C] text-[#FAF7F2] hover:bg-[#444] transition-colors shadow-lg shadow-[#2C2C2C]/10"
+                className="inline-flex items-center h-14 px-8 rounded-xl text-lg font-bold bg-[#0066FF] text-white hover:bg-[#0052CC] transition-colors shadow-lg shadow-[#0066FF]/20"
               >
                 매물 관리 시작하기
               </Link>
@@ -121,37 +121,37 @@ export default function LandingPage() {
           </div>
         </div>
         {/* 배경 장식 */}
-        <div className="absolute top-10 right-0 w-72 h-72 bg-[#FFE8A3]/30 rounded-full blur-3xl -z-10" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#E8D5B5]/20 rounded-full blur-3xl -z-10" />
+        <div className="absolute top-10 right-0 w-72 h-72 bg-blue-100/40 rounded-full blur-3xl -z-10" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-50/50 rounded-full blur-3xl -z-10" />
       </section>
 
       {/* 구분선 */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <hr className="border-[#E8E0D4]" />
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <hr className="border-gray-200" />
       </div>
 
       {/* 기능 소개 섹션 */}
-      <section className="py-20 sm:py-28">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <p className="text-sm font-semibold text-[#B8860B] tracking-widest uppercase mb-3">
+      <section className="py-16 sm:py-24">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <p className="text-sm font-bold text-[#0066FF] tracking-widest uppercase mb-3">
               Features
             </p>
             <h2 className="text-2xl sm:text-3xl font-bold">
               필요한 기능만 담았습니다
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {FEATURES.map((f) => (
               <div
                 key={f.title}
-                className="bg-white rounded-2xl p-8 shadow-sm border border-[#EDE8DF] hover:shadow-md hover:border-[#D4C9B8] transition-all duration-300"
+                className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all duration-300"
               >
-                <div className="w-14 h-14 rounded-xl bg-[#FFF5E0] text-[#B8860B] flex items-center justify-center mb-5">
+                <div className="w-14 h-14 rounded-xl bg-blue-50 text-[#0066FF] flex items-center justify-center mb-5">
                   {f.icon}
                 </div>
                 <h3 className="text-lg font-bold mb-2">{f.title}</h3>
-                <p className="text-[#6B6B6B] text-sm leading-relaxed">
+                <p className="text-gray-500 text-[15px] leading-relaxed">
                   {f.desc}
                 </p>
               </div>
@@ -161,29 +161,29 @@ export default function LandingPage() {
       </section>
 
       {/* 사용 방법 섹션 */}
-      <section className="py-20 sm:py-28 bg-[#F3EDE3]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <p className="text-sm font-semibold text-[#B8860B] tracking-widest uppercase mb-3">
+      <section className="py-16 sm:py-24 bg-[#F5F5F5]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <p className="text-sm font-bold text-[#0066FF] tracking-widest uppercase mb-3">
               How it works
             </p>
             <h2 className="text-2xl sm:text-3xl font-bold">
               3단계로 간편하게
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {STEPS.map((s, i) => (
               <div key={s.num} className="relative text-center md:text-left">
-                <span className="text-5xl sm:text-6xl font-bold text-[#D4C4A8]/60 leading-none">
+                <span className="text-5xl sm:text-6xl font-bold text-gray-300/60 leading-none">
                   {s.num}
                 </span>
                 <h3 className="text-lg font-bold mt-3 mb-2">{s.title}</h3>
-                <p className="text-[#6B6B6B] text-sm leading-relaxed">
+                <p className="text-gray-500 text-[15px] leading-relaxed">
                   {s.desc}
                 </p>
                 {/* 화살표 (md 이상에서 마지막 제외) */}
                 {i < STEPS.length - 1 && (
-                  <div className="hidden md:block absolute top-6 -right-6 lg:-right-8 text-[#D4C4A8]">
+                  <div className="hidden md:block absolute top-6 -right-6 text-gray-300">
                     <svg
                       className="w-5 h-5"
                       fill="none"
@@ -206,17 +206,17 @@ export default function LandingPage() {
       </section>
 
       {/* 하단 CTA 섹션 */}
-      <section className="py-20 sm:py-28">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="py-16 sm:py-24">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">
             지금 바로 시작하세요
           </h2>
-          <p className="text-[#6B6B6B] mb-10 text-base sm:text-lg">
+          <p className="text-gray-500 mb-10 text-base sm:text-lg">
             복잡한 가입 절차 없이 바로 사용할 수 있습니다
           </p>
           <Link
             href="/lock"
-            className="inline-block px-8 py-4 rounded-full text-base font-semibold bg-[#B8860B] text-white hover:bg-[#9A7209] transition-colors shadow-lg shadow-[#B8860B]/20"
+            className="inline-flex items-center h-14 px-8 rounded-xl text-lg font-bold bg-[#0066FF] text-white hover:bg-[#0052CC] transition-colors shadow-lg shadow-[#0066FF]/20"
           >
             지금 바로 시작하기
           </Link>
@@ -224,12 +224,12 @@ export default function LandingPage() {
       </section>
 
       {/* 푸터 */}
-      <footer className="bg-[#2C2C2C] text-[#A0A0A0] py-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-sm font-semibold text-[#E0E0E0] mb-1">
+      <footer className="bg-[#333] text-gray-400 py-10">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+          <p className="text-[15px] font-bold text-gray-200 mb-1">
             하나부동산 매물장
           </p>
-          <p className="text-xs">
+          <p className="text-sm">
             &copy; {new Date().getFullYear()} All rights reserved.
           </p>
         </div>
