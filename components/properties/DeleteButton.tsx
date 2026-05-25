@@ -15,7 +15,7 @@ export default function DeleteButton({ propertyId }: { propertyId: string }) {
       });
 
       if (res.ok) {
-        window.location.href = "/";
+        window.location.href = "/main";
       } else {
         const body = await res.json().catch(() => null);
         alert(`삭제 실패: ${body?.error || res.statusText}`);

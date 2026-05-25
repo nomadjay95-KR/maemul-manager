@@ -38,7 +38,7 @@ export default function PinPad() {
 
       if (res.ok) {
         sessionStorage.setItem("app_unlocked", "true");
-        router.push("/");
+        router.push("/main");
         router.refresh();
       } else {
         setError("비밀번호가 틀렸습니다.");

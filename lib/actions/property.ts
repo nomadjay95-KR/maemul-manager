@@ -65,7 +65,7 @@ export async function createProperty(
 
   await uploadImages(property.id, imageFiles);
 
-  revalidatePath("/");
+  revalidatePath("/main");
   revalidatePath(`/properties/${property.id}`);
 
   return { id: property.id };
@@ -122,7 +122,7 @@ export async function updateProperty(
 
   await uploadImages(id, imageFiles, count ?? 0);
 
-  revalidatePath("/");
+  revalidatePath("/main");
   revalidatePath(`/properties/${id}`);
 
   return { id };
@@ -151,7 +151,7 @@ export async function deleteProperty(
     return { error: "매물 삭제에 실패했습니다." };
   }
 
-  revalidatePath("/");
+  revalidatePath("/main");
 
   return { success: true };
 }

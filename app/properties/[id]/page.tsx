@@ -24,7 +24,7 @@ export default async function PropertyPage({ params }: PageProps) {
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <Link
-          href="/"
+          href="/main"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           ← 목록

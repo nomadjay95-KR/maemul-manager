@@ -32,7 +32,7 @@ export default function PropertyFilter() {
       } else {
         params.delete(key);
       }
-      router.push(`/?${params.toString()}`);
+      router.push(`/main?${params.toString()}`);
     },
     [router, searchParams]
   );

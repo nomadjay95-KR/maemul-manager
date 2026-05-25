@@ -78,7 +78,7 @@ export async function updatePropertyStatus(
     return false;
   }
 
-  revalidatePath("/");
+  revalidatePath("/main");
   revalidatePath(`/properties/${id}`);
 
   return true;
