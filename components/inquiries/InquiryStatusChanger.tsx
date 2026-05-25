@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/Toast";
 import type { InquiryStatus } from "@/types/property";
 
 const OPTIONS: { value: InquiryStatus; label: string }[] = [
@@ -19,6 +20,7 @@ export default function InquiryStatusChanger({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleChange = async (status: InquiryStatus) => {
     if (status === currentStatus || loading) return;
@@ -32,8 +34,13 @@ export default function InquiryStatusChanger({
       });
 
       if (res.ok) {
+        toast("상태가 변경되었습니다", "success");
         router.refresh();
+      } else {
+        toast("상태 변경에 실패했습니다", "error");
       }
+    } catch {
+      toast("네트워크 오류가 발생했습니다", "error");
     } finally {
       setLoading(false);
     }

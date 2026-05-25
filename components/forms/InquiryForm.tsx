@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/Toast";
 
 function Field({
   label,
@@ -49,6 +50,7 @@ export default function InquiryForm({
 }: InquiryFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
+  const { toast } = useToast();
   const isEdit = !!inquiryId;
 
   const today = new Date().toISOString().split("T")[0];
@@ -120,13 +122,13 @@ export default function InquiryForm({
 
       if (res.ok) {
         const { id } = await res.json();
+        toast("저장되었습니다", "success");
         window.location.href = `/inquiries/${id}`;
       } else {
-        const body = await res.json().catch(() => null);
-        alert(`저장 실패: ${body?.error || res.statusText}`);
+        toast("저장에 실패했습니다. 다시 시도해주세요", "error");
       }
-    } catch (err) {
-      alert(`요청 실패: ${err}`);
+    } catch {
+      toast("네트워크 오류가 발생했습니다", "error");
     } finally {
       setSubmitting(false);
     }

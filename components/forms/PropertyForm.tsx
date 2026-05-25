@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import ImageUpload from "./ImageUpload";
 import AddressSearch from "./AddressSearch";
+import { useToast } from "@/components/ui/Toast";
 
 function Field({
   label,
@@ -52,6 +53,7 @@ export default function PropertyForm({
   const newImagesRef = useRef<File[]>([]);
   const deletedIdsRef = useRef<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const { toast } = useToast();
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
   const isEdit = !!propertyId;
 
@@ -158,13 +160,13 @@ export default function PropertyForm({
 
       if (res.ok) {
         const { id } = await res.json();
+        toast("저장되었습니다", "success");
         window.location.href = `/properties/${id}`;
       } else {
-        const body = await res.json().catch(() => null);
-        alert(`저장 실패: ${body?.error || res.statusText}`);
+        toast("저장에 실패했습니다. 다시 시도해주세요", "error");
       }
-    } catch (err) {
-      alert(`요청 실패: ${err}`);
+    } catch {
+      toast("네트워크 오류가 발생했습니다", "error");
     } finally {
       setSubmitting(false);
     }

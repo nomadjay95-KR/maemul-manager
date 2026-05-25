@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/components/ui/Toast";
 
 export default function DeleteButton({ propertyId }: { propertyId: string }) {
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleDelete = async () => {
     if (!window.confirm("정말 이 매물을 삭제하시겠습니까?")) return;
@@ -15,13 +17,13 @@ export default function DeleteButton({ propertyId }: { propertyId: string }) {
       });
 
       if (res.ok) {
+        toast("매물이 삭제되었습니다", "success");
         window.location.href = "/main";
       } else {
-        const body = await res.json().catch(() => null);
-        alert(`삭제 실패: ${body?.error || res.statusText}`);
+        toast("삭제에 실패했습니다. 다시 시도해주세요", "error");
       }
-    } catch (err) {
-      alert(`삭제 요청 실패: ${err}`);
+    } catch {
+      toast("네트워크 오류가 발생했습니다", "error");
     } finally {
       setLoading(false);
     }
