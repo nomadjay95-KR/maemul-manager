@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import ImageUpload from "./ImageUpload";
+import AddressSearch from "./AddressSearch";
 
 function Field({
   label,
@@ -200,11 +201,10 @@ export default function PropertyForm({
       </div>
 
       {/* 주소 */}
-      <Field label="주소" htmlFor="address" error={serverErrors.address} required>
-        <Input
-          id="address"
-          {...register("address")}
-          placeholder="예: 서울시 관악구 봉천동 123-4"
+      <Field label="주소" error={serverErrors.address} required>
+        <AddressSearch
+          value={watch("address") || ""}
+          onChange={(addr) => setValue("address", addr)}
         />
       </Field>
 
