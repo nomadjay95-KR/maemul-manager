@@ -4,6 +4,7 @@ import { fetchPropertyById } from "@/lib/queries/properties";
 import PropertyDetail from "@/components/properties/PropertyDetail";
 import StatusChanger from "@/components/properties/StatusChanger";
 import DeleteButton from "@/components/properties/DeleteButton";
+import ShareButtons from "@/components/properties/ShareButtons";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,12 @@ export default async function PropertyPage({ params }: PageProps) {
 
       {/* 상세 정보 */}
       <PropertyDetail property={property} />
+
+      {/* 공유 */}
+      <div className="mt-6 mb-4">
+        <p className="text-sm text-muted-foreground mb-2">공유</p>
+        <ShareButtons property={property} />
+      </div>
     </main>
   );
 }
