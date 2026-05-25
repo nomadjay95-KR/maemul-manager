@@ -14,21 +14,21 @@ export default function TabNav() {
   const currentTab = searchParams.get("tab") ?? "properties";
 
   return (
-    <div className="flex border-b border-border mb-4">
+    <div className="flex border-b border-border">
       {TABS.map((tab) => (
         <button
           key={tab.value}
           onClick={() => router.push(`/main?tab=${tab.value}`)}
           className={cn(
-            "flex-1 sm:flex-none px-6 py-3 text-sm font-semibold transition-colors relative",
+            "flex-1 sm:flex-none h-14 px-6 text-lg font-bold transition-colors relative",
             currentTab === tab.value
-              ? "text-foreground"
+              ? "text-primary"
               : "text-muted-foreground hover:text-foreground"
           )}
         >
           {tab.label}
           {currentTab === tab.value && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground" />
+            <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-full" />
           )}
         </button>
       ))}

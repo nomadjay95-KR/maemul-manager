@@ -31,7 +31,7 @@ export default function DeleteInquiryButton({ inquiryId }: { inquiryId: string }
     <button
       onClick={handleDelete}
       disabled={loading}
-      className="px-3 py-1.5 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+      className="h-12 px-4 rounded-lg text-[15px] font-medium text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
     >
       {loading ? "삭제 중..." : "삭제"}
     </button>

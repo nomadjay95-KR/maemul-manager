@@ -9,7 +9,7 @@ export default function PropertyCard({ property }: { property: Property }) {
   return (
     <Link
       href={`/properties/${p.id}`}
-      className="block rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent/50 active:bg-accent"
+      className="block rounded-xl border border-border bg-white p-5 transition-colors hover:bg-gray-50 active:bg-gray-100"
     >
       {/* 상단: 배지 */}
       <div className="flex items-center gap-2 mb-2">
@@ -18,18 +18,18 @@ export default function PropertyCard({ property }: { property: Property }) {
       </div>
 
       {/* 주소 */}
-      <p className="text-sm font-semibold text-foreground truncate">{p.address}</p>
+      <p className="text-lg font-bold text-foreground truncate">{p.address}</p>
 
       {/* 가격 */}
-      <p className="text-lg font-bold text-foreground mt-1">
-        <span className="text-xs font-normal text-muted-foreground mr-1">
+      <p className="text-xl font-bold text-primary mt-1">
+        <span className="text-sm font-normal text-muted-foreground mr-1">
           {DEAL_LABEL[p.deal_type]}
         </span>
         {getPriceText(p)}
       </p>
 
       {/* 세부 정보 */}
-      <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
+      <div className="flex gap-3 mt-3 text-sm text-muted-foreground">
         {p.type === "villa" ? (
           <>
             {p.rooms != null && <span>방 {p.rooms}개</span>}
@@ -42,9 +42,9 @@ export default function PropertyCard({ property }: { property: Property }) {
           </>
         )}
         {p.occupancy_status === "vacant" ? (
-          <span className="text-green-600 dark:text-green-400">공실</span>
+          <span className="text-green-600">공실</span>
         ) : (
-          <span className="text-muted-foreground">입주중</span>
+          <span>입주중</span>
         )}
       </div>
     </Link>

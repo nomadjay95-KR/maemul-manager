@@ -29,21 +29,13 @@ export default async function MainPage({ searchParams }: PageProps) {
   const tab = params.tab === "inquiries" ? "inquiries" : "properties";
 
   return (
-    <main className="min-h-screen bg-background px-4 py-6 max-w-2xl mx-auto">
+    <main className="min-h-screen bg-white px-4 sm:px-6 pt-4 pb-28 max-w-3xl mx-auto">
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-2">
         <h1 className="text-xl font-bold text-foreground">
           {tab === "properties" ? "매물장" : "문의장"}
         </h1>
-        <div className="flex gap-2">
-          <Link
-            href={tab === "properties" ? "/properties/new" : "/inquiries/new"}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
-          >
-            + 등록
-          </Link>
-          <LockButton />
-        </div>
+        <LockButton />
       </div>
 
       {/* 탭 */}
@@ -52,11 +44,23 @@ export default async function MainPage({ searchParams }: PageProps) {
       </Suspense>
 
       {/* 탭 콘텐츠 */}
-      {tab === "properties" ? (
-        <PropertiesTab status={params.status} type={params.type} />
-      ) : (
-        <InquiriesTab status={params.status} />
-      )}
+      <div className="mt-4">
+        {tab === "properties" ? (
+          <PropertiesTab status={params.status} type={params.type} />
+        ) : (
+          <InquiriesTab status={params.status} />
+        )}
+      </div>
+
+      {/* 하단 고정 등록 버튼 */}
+      <div className="fixed bottom-6 left-4 right-4 z-40 flex justify-center">
+        <Link
+          href={tab === "properties" ? "/properties/new" : "/inquiries/new"}
+          className="block w-full max-w-[400px] h-[52px] rounded-xl text-[17px] font-bold bg-primary text-white hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center justify-center"
+        >
+          {tab === "properties" ? "+ 매물 등록" : "+ 문의 등록"}
+        </Link>
+      </div>
     </main>
   );
 }

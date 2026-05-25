@@ -17,18 +17,23 @@ function Field({
   label,
   htmlFor,
   error,
+  required,
   children,
 }: {
   label: string;
   htmlFor?: string;
   error?: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor={htmlFor} className="text-sm">{label}</Label>
+    <div className="space-y-2">
+      <Label htmlFor={htmlFor} className="text-[15px] font-bold">
+        {label}
+        {required && <span className="text-destructive ml-0.5">*</span>}
+      </Label>
       {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }
@@ -128,23 +133,23 @@ export default function InquiryForm({
   };
 
   return (
-    <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
+    <form onSubmit={handleFormSubmit} className="flex flex-col gap-5 pb-24">
       {/* 기본 정보 */}
-      <Field label="이름 *" htmlFor="name" error={serverErrors.name}>
+      <Field label="이름" htmlFor="name" error={serverErrors.name} required>
         <Input id="name" {...register("name")} placeholder="홍길동" />
       </Field>
 
-      <Field label="연락처 *" htmlFor="phone" error={serverErrors.phone}>
+      <Field label="연락처" htmlFor="phone" error={serverErrors.phone} required>
         <Input id="phone" {...register("phone")} placeholder="010-1234-5678" />
       </Field>
 
-      <Field label="문의일 *" htmlFor="inquiry_date" error={serverErrors.inquiry_date}>
+      <Field label="문의일" htmlFor="inquiry_date" error={serverErrors.inquiry_date} required>
         <Input id="inquiry_date" type="date" {...register("inquiry_date")} />
       </Field>
 
       {/* 희망 조건 */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold border-b border-border pb-2">
+      <div className="space-y-5">
+        <h3 className="text-[17px] font-bold text-muted-foreground border-b border-border pb-3">
           희망 조건
         </h3>
 
@@ -156,10 +161,10 @@ export default function InquiryForm({
                 type="button"
                 onClick={() => setValue("desired_deal_type", dt)}
                 className={cn(
-                  "flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
+                  "flex-1 h-12 rounded-xl text-base font-semibold transition-colors",
                   desiredDealType === dt
-                    ? "bg-foreground text-background"
-                    : "bg-muted text-muted-foreground"
+                    ? "bg-primary text-white"
+                    : "bg-white text-muted-foreground border border-border"
                 )}
               >
                 {{ monthly: "월세", jeonse: "전세", sale: "매매", null: "무관" }[String(dt)]}
@@ -230,16 +235,20 @@ export default function InquiryForm({
         </Field>
       )}
 
-      {/* 제출 */}
-      <Button type="submit" disabled={submitting} className="w-full">
-        {submitting
-          ? isEdit
-            ? "수정 중..."
-            : "등록 중..."
-          : isEdit
-            ? "문의 수정"
-            : "문의 등록"}
-      </Button>
+      {/* 제출 — 하단 고정 */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border p-4 z-40">
+        <div className="max-w-3xl mx-auto">
+          <Button type="submit" disabled={submitting} className="w-full h-14 text-lg">
+            {submitting
+              ? isEdit
+                ? "수정 중..."
+                : "등록 중..."
+              : isEdit
+                ? "문의 수정"
+                : "문의 등록"}
+          </Button>
+        </div>
+      </div>
     </form>
   );
 }

@@ -15,9 +15,9 @@ interface PageProps {
 function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null;
   return (
-    <div className="flex justify-between py-2 border-b border-border last:border-b-0">
+    <div className="flex justify-between py-3 border-b border-border last:border-b-0">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium text-foreground">{value}</span>
+      <span className="text-base font-medium text-foreground">{value}</span>
     </div>
   );
 }
@@ -50,19 +50,19 @@ export default async function InquiryDetailPage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-6 max-w-2xl mx-auto">
+    <main className="min-h-screen bg-white px-4 sm:px-6 py-6 max-w-3xl mx-auto">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <Link
           href="/main?tab=inquiries"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="h-12 inline-flex items-center text-[15px] font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           ← 문의 목록
         </Link>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Link
             href={`/inquiries/${inquiry.id}/edit`}
-            className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted transition-colors"
+            className="h-12 px-4 inline-flex items-center rounded-lg text-[15px] font-medium text-muted-foreground hover:bg-gray-100 transition-colors"
           >
             수정
           </Link>
@@ -72,7 +72,7 @@ export default async function InquiryDetailPage({ params }: PageProps) {
 
       {/* 상태 변경 */}
       <div className="mb-6">
-        <p className="text-xs text-muted-foreground mb-2">상태 변경</p>
+        <p className="text-sm text-muted-foreground mb-2">상태 변경</p>
         <InquiryStatusChanger
           inquiryId={inquiry.id}
           currentStatus={inquiry.status}
@@ -80,8 +80,8 @@ export default async function InquiryDetailPage({ params }: PageProps) {
       </div>
 
       {/* 기본 정보 */}
-      <div className="rounded-lg border border-border bg-card p-4 mb-4">
-        <h2 className="text-sm font-semibold text-foreground mb-3">기본 정보</h2>
+      <div className="rounded-xl border border-border bg-white p-5 mb-4">
+        <h2 className="text-[17px] font-bold text-muted-foreground mb-3">기본 정보</h2>
         <InfoRow label="이름" value={inquiry.name} />
         <InfoRow label="연락처" value={inquiry.phone} />
         <InfoRow label="문의일" value={inquiry.inquiry_date} />
@@ -89,13 +89,13 @@ export default async function InquiryDetailPage({ params }: PageProps) {
 
       {/* 희망 조건 */}
       {conditions.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-4 mb-4">
-          <h2 className="text-sm font-semibold text-foreground mb-3">희망 조건</h2>
+        <div className="rounded-xl border border-border bg-white p-5 mb-4">
+          <h2 className="text-[17px] font-bold text-muted-foreground mb-3">희망 조건</h2>
           <div className="flex flex-wrap gap-2">
             {conditions.map((c, i) => (
               <span
                 key={i}
-                className="px-2 py-1 rounded-full text-xs bg-muted text-muted-foreground"
+                className="h-8 inline-flex items-center px-3 rounded-full text-sm bg-gray-100 text-muted-foreground"
               >
                 {c}
               </span>
@@ -106,27 +106,27 @@ export default async function InquiryDetailPage({ params }: PageProps) {
 
       {/* 문의 내용 */}
       {inquiry.request_details && (
-        <div className="rounded-lg border border-border bg-card p-4 mb-4">
-          <h2 className="text-sm font-semibold text-foreground mb-2">문의 내용</h2>
-          <p className="text-sm text-foreground whitespace-pre-wrap">{inquiry.request_details}</p>
+        <div className="rounded-xl border border-border bg-white p-5 mb-4">
+          <h2 className="text-[17px] font-bold text-muted-foreground mb-2">문의 내용</h2>
+          <p className="text-base text-foreground whitespace-pre-wrap">{inquiry.request_details}</p>
         </div>
       )}
 
       {/* 응대 결과 */}
       {inquiry.response_result && (
-        <div className="rounded-lg border border-border bg-card p-4 mb-4">
-          <h2 className="text-sm font-semibold text-foreground mb-2">응대 결과</h2>
-          <p className="text-sm text-foreground whitespace-pre-wrap">{inquiry.response_result}</p>
+        <div className="rounded-xl border border-border bg-white p-5 mb-4">
+          <h2 className="text-[17px] font-bold text-muted-foreground mb-2">응대 결과</h2>
+          <p className="text-base text-foreground whitespace-pre-wrap">{inquiry.response_result}</p>
         </div>
       )}
 
       {/* 매칭 매물 */}
       <div className="mt-6">
-        <h2 className="text-sm font-semibold text-foreground mb-3">
+        <h2 className="text-[17px] font-bold text-foreground mb-3">
           매칭 매물 ({matchingProperties.length}건)
         </h2>
         {matchingProperties.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">
+          <p className="text-base text-muted-foreground py-4 text-center">
             조건에 맞는 매물이 없습니다.
           </p>
         ) : (

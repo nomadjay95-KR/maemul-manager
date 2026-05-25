@@ -18,18 +18,23 @@ function Field({
   label,
   htmlFor,
   error,
+  required,
   children,
 }: {
   label: string;
   htmlFor?: string;
   error?: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor={htmlFor} className="text-sm">{label}</Label>
+    <div className="space-y-2">
+      <Label htmlFor={htmlFor} className="text-[15px] font-bold">
+        {label}
+        {required && <span className="text-destructive ml-0.5">*</span>}
+      </Label>
       {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }
@@ -163,7 +168,7 @@ export default function PropertyForm({
   };
 
   return (
-    <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
+    <form onSubmit={handleFormSubmit} className="flex flex-col gap-5 pb-24">
       {/* 타입 탭 */}
       <div className="flex gap-2">
         {(["villa", "shop"] as const).map((t) => (
@@ -172,10 +177,10 @@ export default function PropertyForm({
             type="button"
             onClick={() => setValue("type", t)}
             className={cn(
-              "flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
+              "flex-1 h-12 rounded-xl text-base font-semibold transition-colors",
               propertyType === t
-                ? "bg-foreground text-background"
-                : "bg-muted text-muted-foreground"
+                ? "bg-primary text-white"
+                : "bg-white text-muted-foreground border border-border"
             )}
           >
             {t === "villa" ? "빌라" : "상가"}
@@ -185,7 +190,7 @@ export default function PropertyForm({
 
       {/* 사진 */}
       <div>
-        <Label className="text-sm mb-2 block">사진 (최대 3장)</Label>
+        <Label className="text-[15px] font-bold mb-2 block">사진 (최대 3장)</Label>
         <ImageUpload
           existingImages={initialData?.images}
           onChange={handleImageChange}
@@ -193,7 +198,7 @@ export default function PropertyForm({
       </div>
 
       {/* 주소 */}
-      <Field label="주소 *" htmlFor="address" error={serverErrors.address}>
+      <Field label="주소" htmlFor="address" error={serverErrors.address} required>
         <Input
           id="address"
           {...register("address")}
@@ -202,7 +207,7 @@ export default function PropertyForm({
       </Field>
 
       {/* 거래 유형 */}
-      <Field label="거래 유형 *" error={serverErrors.deal_type}>
+      <Field label="거래 유형" error={serverErrors.deal_type} required>
         <div className="flex gap-2">
           {(["monthly", "jeonse", "sale"] as const).map((dt) => (
             <button
@@ -210,7 +215,7 @@ export default function PropertyForm({
               type="button"
               onClick={() => setValue("deal_type", dt)}
               className={cn(
-                "flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
+                "flex-1 h-12 rounded-xl text-base font-semibold transition-colors",
                 dealType === dt
                   ? "bg-foreground text-background"
                   : "bg-muted text-muted-foreground"
@@ -225,10 +230,10 @@ export default function PropertyForm({
       {/* 가격 필드 */}
       {dealType === "monthly" && (
         <div className="grid grid-cols-2 gap-3">
-          <Field label="보증금 (만원) *" htmlFor="deposit" error={serverErrors.deposit}>
+          <Field label="보증금 (만원)" htmlFor="deposit" error={serverErrors.deposit} required>
             <Input id="deposit" type="number" {...register("deposit")} placeholder="1000" />
           </Field>
-          <Field label="월세 (만원) *" htmlFor="monthly_rent" error={serverErrors.monthly_rent}>
+          <Field label="월세 (만원)" htmlFor="monthly_rent" error={serverErrors.monthly_rent} required>
             <Input
               id="monthly_rent"
               type="number"
@@ -239,7 +244,7 @@ export default function PropertyForm({
         </div>
       )}
       {dealType === "jeonse" && (
-        <Field label="전세금 (만원) *" htmlFor="jeonse_price" error={serverErrors.jeonse_price}>
+        <Field label="전세금 (만원)" htmlFor="jeonse_price" error={serverErrors.jeonse_price} required>
           <Input
             id="jeonse_price"
             type="number"
@@ -249,7 +254,7 @@ export default function PropertyForm({
         </Field>
       )}
       {dealType === "sale" && (
-        <Field label="매매가 (만원) *" htmlFor="sale_price" error={serverErrors.sale_price}>
+        <Field label="매매가 (만원)" htmlFor="sale_price" error={serverErrors.sale_price} required>
           <Input
             id="sale_price"
             type="number"
@@ -268,7 +273,7 @@ export default function PropertyForm({
               type="button"
               onClick={() => setValue("occupancy_status", os)}
               className={cn(
-                "flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
+                "flex-1 h-12 rounded-xl text-base font-semibold transition-colors",
                 watch("occupancy_status") === os
                   ? "bg-foreground text-background"
                   : "bg-muted text-muted-foreground"
@@ -287,7 +292,7 @@ export default function PropertyForm({
       {/* 빌라 전용 */}
       {propertyType === "villa" && (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold border-b border-border pb-2">
+          <h3 className="text-[17px] font-bold text-muted-foreground border-b border-border pb-3">
             빌라 정보
           </h3>
           <div className="grid grid-cols-2 gap-3">
@@ -323,7 +328,7 @@ export default function PropertyForm({
                     type="button"
                     onClick={() => setValue("loan_available", v)}
                     className={cn(
-                      "flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
+                      "flex-1 h-12 rounded-xl text-base font-semibold transition-colors",
                       watch("loan_available") === v
                         ? "bg-foreground text-background"
                         : "bg-muted text-muted-foreground"
@@ -341,7 +346,7 @@ export default function PropertyForm({
       {/* 상가 전용 */}
       {propertyType === "shop" && (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold border-b border-border pb-2">
+          <h3 className="text-[17px] font-bold text-muted-foreground border-b border-border pb-3">
             상가 정보
           </h3>
           <div className="grid grid-cols-2 gap-3">
@@ -380,7 +385,7 @@ export default function PropertyForm({
 
       {/* 연락처 / 보안 */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold border-b border-border pb-2">
+        <h3 className="text-[17px] font-bold text-muted-foreground border-b border-border pb-3">
           연락처 / 보안
         </h3>
         <Field label="집주인 연락처" htmlFor="owner_phone">
@@ -396,7 +401,7 @@ export default function PropertyForm({
 
       {/* 기타 */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold border-b border-border pb-2">
+        <h3 className="text-[17px] font-bold text-muted-foreground border-b border-border pb-3">
           기타
         </h3>
         <Field label="특이사항" htmlFor="notes">
@@ -412,16 +417,20 @@ export default function PropertyForm({
         </Field>
       </div>
 
-      {/* 제출 */}
-      <Button type="submit" disabled={submitting} className="w-full">
-        {submitting
-          ? isEdit
-            ? "수정 중..."
-            : "등록 중..."
-          : isEdit
-            ? "매물 수정"
-            : "매물 등록"}
-      </Button>
+      {/* 제출 — 하단 고정 */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border p-4 z-40">
+        <div className="max-w-3xl mx-auto">
+          <Button type="submit" disabled={submitting} className="w-full h-14 text-lg">
+            {submitting
+              ? isEdit
+                ? "수정 중..."
+                : "등록 중..."
+              : isEdit
+                ? "매물 수정"
+                : "매물 등록"}
+          </Button>
+        </div>
+      </div>
     </form>
   );
 }

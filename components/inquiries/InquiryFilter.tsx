@@ -31,16 +31,16 @@ export default function InquiryFilter() {
   );
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 overflow-x-auto pb-1">
       {STATUS_OPTIONS.map((opt) => (
         <button
           key={opt.value}
           onClick={() => updateFilter(opt.value)}
           className={cn(
-            "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
+            "h-11 px-4 rounded-full text-[15px] font-medium transition-colors whitespace-nowrap flex-shrink-0",
             currentStatus === opt.value
-              ? "bg-foreground text-background"
-              : "bg-muted text-muted-foreground hover:bg-accent"
+              ? "bg-primary text-white"
+              : "bg-white text-muted-foreground border border-border hover:bg-accent"
           )}
         >
           {opt.label}

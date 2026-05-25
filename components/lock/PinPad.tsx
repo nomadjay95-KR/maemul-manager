@@ -58,9 +58,9 @@ export default function PinPad() {
   const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"];
 
   return (
-    <div className="flex flex-col items-center gap-8">
+    <div className="flex flex-col items-center gap-10">
       {/* PIN 표시 */}
-      <div className="flex gap-4">
+      <div className="flex gap-5">
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
@@ -74,13 +74,13 @@ export default function PinPad() {
       </div>
 
       {/* 에러 메시지 */}
-      <div className="h-5 text-sm text-destructive">{error}</div>
+      <div className="h-6 text-base text-destructive font-medium">{error}</div>
 
       {/* 숫자 키패드 */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-5">
         {keys.map((key, idx) => {
           if (key === "") {
-            return <div key={idx} />;
+            return <div key={idx} className="w-[76px] h-[76px]" />;
           }
 
           if (key === "del") {
@@ -89,7 +89,7 @@ export default function PinPad() {
                 key={idx}
                 onClick={handleDelete}
                 disabled={isLoading || pin.length === 0}
-                className="w-[72px] h-[72px] rounded-full flex items-center justify-center text-lg font-medium text-foreground/70 active:bg-muted transition-colors disabled:opacity-30"
+                className="w-[76px] h-[76px] rounded-full flex items-center justify-center text-xl font-medium text-foreground/70 active:bg-gray-100 transition-colors disabled:opacity-30"
               >
                 ←
               </button>
@@ -101,7 +101,7 @@ export default function PinPad() {
               key={idx}
               onClick={() => handleNumber(key)}
               disabled={isLoading}
-              className="w-[72px] h-[72px] rounded-full border border-border flex items-center justify-center text-2xl font-medium hover:bg-muted active:bg-accent transition-colors disabled:opacity-50"
+              className="w-[76px] h-[76px] rounded-full border border-border flex items-center justify-center text-2xl font-medium hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50"
             >
               {key}
             </button>

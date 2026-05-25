@@ -8,7 +8,7 @@ export default function LockButton() {
   return (
     <button
       onClick={lock}
-      className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted transition-colors"
+      className="h-12 px-4 rounded-lg text-[15px] font-medium text-muted-foreground hover:bg-gray-100 transition-colors"
     >
       잠금
     </button>

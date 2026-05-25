@@ -4,8 +4,8 @@ import { DEAL_LABEL } from "@/lib/format/property";
 import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG = {
-  active: { label: "진행중", className: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
-  resolved: { label: "완료", className: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400" },
+  active: { label: "진행중", className: "bg-green-100 text-green-700" },
+  resolved: { label: "완료", className: "bg-gray-100 text-gray-500" },
 } as const;
 
 export default function InquiryCard({ inquiry }: { inquiry: Inquiry }) {
@@ -29,27 +29,27 @@ export default function InquiryCard({ inquiry }: { inquiry: Inquiry }) {
   return (
     <Link
       href={`/inquiries/${q.id}`}
-      className="block rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent/50 active:bg-accent"
+      className="block rounded-xl border border-border bg-white p-5 transition-colors hover:bg-gray-50 active:bg-gray-100"
     >
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-foreground">{q.name}</span>
-          <span className="text-xs text-muted-foreground">{q.phone}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-base font-bold text-foreground">{q.name}</span>
+          <span className="text-sm text-muted-foreground">{q.phone}</span>
         </div>
-        <span className={cn("px-2 py-0.5 rounded text-xs font-medium", statusConfig.className)}>
+        <span className={cn("h-7 inline-flex items-center px-2.5 rounded text-[13px] font-semibold", statusConfig.className)}>
           {statusConfig.label}
         </span>
       </div>
 
       {conditions.length > 0 && (
-        <p className="text-sm text-muted-foreground">{conditions.join(" · ")}</p>
+        <p className="text-[15px] text-muted-foreground">{conditions.join(" · ")}</p>
       )}
 
       {q.request_details && (
-        <p className="text-sm text-muted-foreground mt-1 truncate">{q.request_details}</p>
+        <p className="text-[15px] text-muted-foreground mt-1 truncate">{q.request_details}</p>
       )}
 
-      <p className="text-xs text-muted-foreground mt-2">{q.inquiry_date}</p>
+      <p className="text-sm text-muted-foreground mt-3">{q.inquiry_date}</p>
     </Link>
   );
 }

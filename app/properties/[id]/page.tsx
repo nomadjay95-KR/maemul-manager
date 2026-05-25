@@ -20,19 +20,19 @@ export default async function PropertyPage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-6 max-w-2xl mx-auto">
+    <main className="min-h-screen bg-white px-4 sm:px-6 py-6 max-w-3xl mx-auto">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <Link
           href="/main"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="h-12 inline-flex items-center text-[15px] font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           ← 목록
         </Link>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Link
             href={`/properties/${property.id}/edit`}
-            className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted transition-colors"
+            className="h-12 px-4 inline-flex items-center rounded-lg text-[15px] font-medium text-muted-foreground hover:bg-gray-100 transition-colors"
           >
             수정
           </Link>
@@ -42,7 +42,7 @@ export default async function PropertyPage({ params }: PageProps) {
 
       {/* 상태 변경 */}
       <div className="mb-6">
-        <p className="text-xs text-muted-foreground mb-2">상태 변경</p>
+        <p className="text-sm text-muted-foreground mb-2">상태 변경</p>
         <StatusChanger
           propertyId={property.id}
           currentStatus={property.status}
