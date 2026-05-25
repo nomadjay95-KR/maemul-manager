@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 
 declare global {
@@ -21,7 +21,10 @@ declare global {
         Marker: new (options: {
           map: unknown;
           position: unknown;
-        }) => { setPosition: (pos: unknown) => void; setMap: (map: unknown) => void };
+        }) => {
+          setPosition: (pos: unknown) => void;
+          setMap: (map: unknown) => void;
+        };
         services: {
           Geocoder: new () => {
             addressSearch: (
@@ -48,23 +51,52 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<unknown>(null);
   const markerRef = useRef<unknown>(null);
+  const [sdkLoaded, setSdkLoaded] = useState(false);
+  const [address, setAddress] = useState(value);
 
   const handleSearch = () => {
+    if (!window.daum?.Postcode) {
+      alert("주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
     new window.daum.Postcode({
       oncomplete: (data) => {
         const addr = data.roadAddress || data.address;
         onChange(addr);
+        setAddress(addr);
       },
     }).open();
   };
 
+  // 외부 value 변경 동기화
   useEffect(() => {
-    if (!value || !mapRef.current) return;
+    setAddress(value);
+  }, [value]);
 
-    const renderMap = () => {
+  // SDK 로드 대기
+  useEffect(() => {
+    const waitForKakao = () => {
+      if (window.kakao?.maps) {
+        window.kakao.maps.load(() => setSdkLoaded(true));
+      } else {
+        setTimeout(waitForKakao, 300);
+      }
+    };
+    waitForKakao();
+  }, []);
+
+  // 주소 변경 시 지도 렌더링 — 컨테이너가 visible 된 후 실행
+  useEffect(() => {
+    if (!sdkLoaded || !address) return;
+
+    // requestAnimationFrame으로 DOM 렌더링 완료 후 실행
+    const rafId = requestAnimationFrame(() => {
+      if (!mapRef.current) return;
+
       const geocoder = new window.kakao.maps.services.Geocoder();
-      geocoder.addressSearch(value, (result, status) => {
+      geocoder.addressSearch(address, (result, status) => {
         if (status !== window.kakao.maps.services.Status.OK) return;
+
         const coords = new window.kakao.maps.LatLng(
           parseFloat(result[0].y),
           parseFloat(result[0].x)
@@ -76,30 +108,31 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
             level: 3,
           });
           mapInstanceRef.current = map;
-          const marker = new window.kakao.maps.Marker({
+          markerRef.current = new window.kakao.maps.Marker({
             map,
             position: coords,
           });
-          markerRef.current = marker;
         } else {
-          const map = mapInstanceRef.current as { setCenter: (c: unknown) => void };
+          const map = mapInstanceRef.current as {
+            setCenter: (c: unknown) => void;
+          };
           map.setCenter(coords);
-          const marker = markerRef.current as { setPosition: (p: unknown) => void };
+          const marker = markerRef.current as {
+            setPosition: (p: unknown) => void;
+          };
           marker.setPosition(coords);
         }
       });
-    };
+    });
 
-    if (window.kakao?.maps) {
-      window.kakao.maps.load(renderMap);
-    }
-  }, [value]);
+    return () => cancelAnimationFrame(rafId);
+  }, [sdkLoaded, address]);
 
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
         <Input
-          value={value}
+          value={address}
           readOnly
           placeholder="주소를 검색해주세요"
           className="flex-1"
@@ -112,10 +145,11 @@ export default function AddressSearch({ value, onChange }: AddressSearchProps) {
           주소 찾기
         </button>
       </div>
-      {value && (
+      {address && (
         <div
           ref={mapRef}
-          className="w-full h-[200px] rounded-lg overflow-hidden border border-border"
+          style={{ width: "100%", height: "200px" }}
+          className="rounded-lg overflow-hidden border border-border"
         />
       )}
     </div>

@@ -31,12 +31,12 @@ export default function RootLayout({
       >
         {children}
         <Script
-          src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
-          strategy="beforeInteractive"
+          src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
+          strategy="afterInteractive"
         />
         <Script
-          src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_JS_KEY}&libraries=services`}
-          strategy="beforeInteractive"
+          src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_JS_KEY}&libraries=services&autoload=false`}
+          strategy="afterInteractive"
         />
       </body>
     </html>
