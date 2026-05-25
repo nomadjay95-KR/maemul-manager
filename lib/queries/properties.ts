@@ -10,16 +10,15 @@ import type {
 export interface PropertyFilters {
   status?: PropertyStatus;
   type?: PropertyType;
+  search?: string;
+  orderBy?: string;
 }
 
 export async function fetchProperties(
   filters?: PropertyFilters
 ): Promise<Property[]> {
   const supabase = getSupabase();
-  let query = supabase
-    .from("properties")
-    .select("*")
-    .order("created_at", { ascending: false });
+  let query = supabase.from("properties").select("*");
 
   if (filters?.status) {
     query = query.eq("status", filters.status);
@@ -27,6 +26,25 @@ export async function fetchProperties(
 
   if (filters?.type) {
     query = query.eq("type", filters.type);
+  }
+
+  if (filters?.search) {
+    query = query.ilike("address", `%${filters.search}%`);
+  }
+
+  switch (filters?.orderBy) {
+    case "deposit_asc":
+      query = query.order("deposit", { ascending: true, nullsFirst: false });
+      break;
+    case "deposit_desc":
+      query = query.order("deposit", { ascending: false });
+      break;
+    case "status":
+      query = query.order("status", { ascending: true });
+      break;
+    default:
+      query = query.order("created_at", { ascending: false });
+      break;
   }
 
   const { data, error } = await query;

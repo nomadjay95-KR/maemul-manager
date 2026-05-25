@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const STATUS_OPTIONS = [
@@ -17,12 +17,22 @@ const TYPE_OPTIONS = [
   { value: "shop", label: "상가" },
 ] as const;
 
+const SORT_OPTIONS = [
+  { value: "", label: "최신순" },
+  { value: "deposit_asc", label: "보증금 낮은순" },
+  { value: "deposit_desc", label: "보증금 높은순" },
+  { value: "status", label: "상태순" },
+] as const;
+
 export default function PropertyFilter() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const currentStatus = searchParams.get("status") ?? "";
   const currentType = searchParams.get("type") ?? "";
+  const currentOrderBy = searchParams.get("orderBy") ?? "";
+  const currentSearch = searchParams.get("search") ?? "";
+  const [searchInput, setSearchInput] = useState(currentSearch);
 
   const updateFilter = useCallback(
     (key: string, value: string) => {
@@ -37,6 +47,11 @@ export default function PropertyFilter() {
     },
     [router, searchParams]
   );
+
+  const handleSearchSubmit = () => {
+    const trimmed = searchInput.trim();
+    updateFilter("search", trimmed);
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -74,6 +89,31 @@ export default function PropertyFilter() {
             {opt.label}
           </button>
         ))}
+      </div>
+
+      {/* 검색 + 정렬 */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSearchSubmit();
+          }}
+          placeholder="주소 검색"
+          className="flex-1 h-[52px] px-4 rounded-xl border border-border bg-white text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+        <select
+          value={currentOrderBy}
+          onChange={(e) => updateFilter("orderBy", e.target.value)}
+          className="h-[48px] px-3 rounded-xl border border-border bg-white text-[15px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );

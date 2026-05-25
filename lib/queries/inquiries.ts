@@ -3,19 +3,33 @@ import type { Inquiry, InquiryStatus, Property } from "@/types/property";
 
 export interface InquiryFilters {
   status?: InquiryStatus;
+  search?: string;
+  orderBy?: string;
 }
 
 export async function fetchInquiries(
   filters?: InquiryFilters
 ): Promise<Inquiry[]> {
   const supabase = getSupabase();
-  let query = supabase
-    .from("inquiries")
-    .select("*")
-    .order("created_at", { ascending: false });
+  let query = supabase.from("inquiries").select("*");
 
   if (filters?.status) {
     query = query.eq("status", filters.status);
+  }
+
+  if (filters?.search) {
+    query = query.or(
+      `name.ilike.%${filters.search}%,phone.ilike.%${filters.search}%`
+    );
+  }
+
+  switch (filters?.orderBy) {
+    case "inquiry_date":
+      query = query.order("inquiry_date", { ascending: true });
+      break;
+    default:
+      query = query.order("created_at", { ascending: false });
+      break;
   }
 
   const { data, error } = await query;

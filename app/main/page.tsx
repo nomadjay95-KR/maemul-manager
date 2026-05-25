@@ -21,6 +21,8 @@ interface PageProps {
     tab?: string;
     status?: string;
     type?: string;
+    search?: string;
+    orderBy?: string;
   }>;
 }
 
@@ -46,9 +48,18 @@ export default async function MainPage({ searchParams }: PageProps) {
       {/* 탭 콘텐츠 */}
       <div className="mt-4">
         {tab === "properties" ? (
-          <PropertiesTab status={params.status} type={params.type} />
+          <PropertiesTab
+            status={params.status}
+            type={params.type}
+            search={params.search}
+            orderBy={params.orderBy}
+          />
         ) : (
-          <InquiriesTab status={params.status} />
+          <InquiriesTab
+            status={params.status}
+            search={params.search}
+            orderBy={params.orderBy}
+          />
         )}
       </div>
 
@@ -68,13 +79,19 @@ export default async function MainPage({ searchParams }: PageProps) {
 async function PropertiesTab({
   status,
   type,
+  search,
+  orderBy,
 }: {
   status?: string;
   type?: string;
+  search?: string;
+  orderBy?: string;
 }) {
   const properties = await fetchProperties({
     status: (status as PropertyStatus) || undefined,
     type: (type as PropertyType) || undefined,
+    search: search || undefined,
+    orderBy: orderBy || undefined,
   });
 
   return (
@@ -98,9 +115,19 @@ async function PropertiesTab({
   );
 }
 
-async function InquiriesTab({ status }: { status?: string }) {
+async function InquiriesTab({
+  status,
+  search,
+  orderBy,
+}: {
+  status?: string;
+  search?: string;
+  orderBy?: string;
+}) {
   const inquiries = await fetchInquiries({
     status: (status as InquiryStatus) || undefined,
+    search: search || undefined,
+    orderBy: orderBy || undefined,
   });
 
   return (
