@@ -36,21 +36,23 @@ npm run lint     # ESLint
 
 ### Key Directories
 
-- `/lib/actions/` — Server Actions (property, inquiry CRUD)
+- `/lib/actions/` — Server Actions (property, inquiry, schedule CRUD)
 - `/lib/queries/` — 서버 데이터 조회 함수 (검색/정렬 지원)
 - `/lib/validations/` — Zod 스키마
 - `/lib/format/` — 가격 포맷, 라벨 매핑 유틸
-- `/components/forms/` — PropertyForm, InquiryForm, ImageUpload, AddressSearch, Field
+- `/components/forms/` — PropertyForm, InquiryForm, ScheduleForm, ImageUpload, AddressSearch, Field
+- `/components/calendar/` — CalendarView, DaySchedules, ScheduleBadge, DeleteScheduleButton
 - `/components/ui/` — shadcn 컴포넌트 + Toast, InfoRow, EmptyState
-- `/types/` — TypeScript 타입 정의
+- `/types/` — TypeScript 타입 정의 (property.ts, schedule.ts)
 - `/supabase/migrations/` — DB 마이그레이션 SQL
 
 ### Shared Components (리팩터링 추출)
 
-- `components/forms/Field.tsx` — 폼 필드 래퍼 (label, error, required 표시). PropertyForm, InquiryForm 공유.
+- `components/forms/Field.tsx` — 폼 필드 래퍼 (label, error, required 표시). PropertyForm, InquiryForm, ScheduleForm 공유.
 - `components/ui/InfoRow.tsx` — 상세 페이지 key-value 행. PropertyDetail, InquiryDetail 공유.
 - `components/ui/EmptyState.tsx` — 빈 목록 표시. 메인 페이지 매물/문의 탭 공유.
-- `lib/utils.ts` → `cleanData()` — 빈 문자열을 null로 변환. property, inquiry actions 공유.
+- `lib/utils.ts` → `cleanData()` — 빈 문자열을 null로 변환. property, inquiry, schedule actions 공유.
+- `components/calendar/ScheduleBadge.tsx` — 일정 종류별 색상 배지/점. CATEGORY_LABELS 라벨 맵 export.
 
 ### Auth
 
@@ -58,7 +60,7 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 
 ### DB Schema
 
-단일 `properties` 테이블에 `type` 컬럼(`villa`/`shop`)으로 구분. 가격은 만원 단위 정수. `property_images` 테이블로 사진 관리. `inquiries` 테이블로 문의 관리. RLS 활성화, anon 역할 허용.
+단일 `properties` 테이블에 `type` 컬럼(`villa`/`shop`)으로 구분. 가격은 만원 단위 정수. `property_images` 테이블로 사진 관리. `inquiries` 테이블로 문의 관리. `schedules` 테이블로 거래 일정 관리 (property_id FK, ON DELETE SET NULL). RLS 활성화, anon 역할 허용.
 
 ### External APIs
 
@@ -71,6 +73,16 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 - 매물: 주소 ilike 검색, 보증금순/상태순/최신순 정렬
 - 문의: 이름/연락처 or ilike 검색, 문의일순/최신순 정렬
 - URL searchParams로 서버 사이드 처리, `parseEnum()`으로 런타임 검증
+
+### 캘린더 (거래 일정)
+
+- 탭 구조: 매물장 / 문의장 / 캘린더
+- `components/calendar/CalendarView.tsx` — 월간 달력 그리드 (Client Component). 월 이동 시 `/api/schedules?year=&month=`로 클라이언트 fetch (전체 새로고침 없음).
+- `components/calendar/DaySchedules.tsx` — 선택 날짜 일정 목록, 일정 클릭 시 수정 페이지 이동
+- 일정 종류: contract(계약서/파랑), move_in(입주/초록), balance(잔금/빨강), interim(중도금/주황), etc(기타/회색)
+- 매물 연결 선택적 (property_id nullable). 독립 일정도 가능.
+- 시간: 체크박스 ON 시만 입력 (schedule_time nullable)
+- ScheduleForm: 연결 매물 드롭다운은 `/api/properties/active`에서 active/reserved 매물 목록 fetch
 
 ### Toast 알림
 
@@ -89,6 +101,7 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 - Storage: property-photos 버킷 (anon INSERT/SELECT/DELETE)
 - 현관 비밀번호: 평문 저장
 - 매물-문의 FK 없음 (쿼리 매칭)
+- 매물-일정 FK 있음 (schedules.property_id → properties.id, ON DELETE SET NULL)
 - 수정 후 revalidatePath 필수
 
 ## 알려진 이슈 및 해결책
