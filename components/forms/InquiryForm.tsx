@@ -121,11 +121,16 @@ export default function InquiryForm({
       });
 
       if (res.ok) {
-        const { id } = await res.json();
+        const data = await res.json();
+        if (!data?.id) {
+          toast("서버 응답 오류가 발생했습니다", "error");
+          return;
+        }
         toast("저장되었습니다", "success");
-        window.location.href = `/inquiries/${id}`;
+        window.location.href = `/inquiries/${data.id}`;
       } else {
-        toast("저장에 실패했습니다. 다시 시도해주세요", "error");
+        const body = await res.json().catch(() => null);
+        toast(body?.error || "저장에 실패했습니다. 다시 시도해주세요", "error");
       }
     } catch {
       toast("네트워크 오류가 발생했습니다", "error");

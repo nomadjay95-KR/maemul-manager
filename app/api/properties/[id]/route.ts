@@ -30,7 +30,9 @@ export async function PUT(
     return NextResponse.json({ error: result.error }, { status: 500 });
   }
 
-  return NextResponse.json({ id: result.id });
+  const response: { id: string; warning?: string } = { id: result.id };
+  if ("warning" in result) response.warning = result.warning;
+  return NextResponse.json(response);
 }
 
 export async function DELETE(

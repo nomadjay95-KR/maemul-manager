@@ -8,8 +8,13 @@ function cleanData(data: Record<string, unknown>) {
   );
 }
 
-async function uploadImages(propertyId: string, files: File[], startOrder = 0) {
+async function uploadImages(
+  propertyId: string,
+  files: File[],
+  startOrder = 0
+): Promise<{ failed: number }> {
   const supabase = getSupabase();
+  let failed = 0;
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -29,6 +34,7 @@ async function uploadImages(propertyId: string, files: File[], startOrder = 0) {
 
     if (uploadError) {
       console.error("Failed to upload image:", uploadError.message);
+      failed++;
       continue;
     }
 
@@ -42,12 +48,14 @@ async function uploadImages(propertyId: string, files: File[], startOrder = 0) {
       sort_order: startOrder + i,
     });
   }
+
+  return { failed };
 }
 
 export async function createProperty(
   data: Record<string, unknown>,
   imageFiles: File[]
-): Promise<{ id: string } | { error: string }> {
+): Promise<{ id: string; warning?: string } | { error: string }> {
   const supabase = getSupabase();
 
   const parsed = propertySchema.safeParse(data);
@@ -68,10 +76,14 @@ export async function createProperty(
     return { error: "매물 등록에 실패했습니다." };
   }
 
-  await uploadImages(property.id, imageFiles);
+  const { failed } = await uploadImages(property.id, imageFiles);
 
   revalidatePath("/main");
   revalidatePath(`/properties/${property.id}`);
+
+  if (failed > 0) {
+    return { id: property.id, warning: `${failed}장의 사진 업로드에 실패했습니다` };
+  }
 
   return { id: property.id };
 }
@@ -81,7 +93,7 @@ export async function updateProperty(
   data: Record<string, unknown>,
   imageFiles: File[],
   deletedImageIds: string[]
-): Promise<{ id: string } | { error: string }> {
+): Promise<{ id: string; warning?: string } | { error: string }> {
   const supabase = getSupabase();
 
   const parsed = propertySchema.safeParse(data);
@@ -125,10 +137,14 @@ export async function updateProperty(
     .select("*", { count: "exact", head: true })
     .eq("property_id", id);
 
-  await uploadImages(id, imageFiles, count ?? 0);
+  const { failed } = await uploadImages(id, imageFiles, count ?? 0);
 
   revalidatePath("/main");
   revalidatePath(`/properties/${id}`);
+
+  if (failed > 0) {
+    return { id, warning: `${failed}장의 사진 업로드에 실패했습니다` };
+  }
 
   return { id };
 }

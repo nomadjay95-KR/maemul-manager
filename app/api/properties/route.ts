@@ -16,5 +16,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
-  return NextResponse.json({ id: result.id });
+  const response: { id: string; warning?: string } = { id: result.id };
+  if ("warning" in result) response.warning = result.warning;
+  return NextResponse.json(response);
 }

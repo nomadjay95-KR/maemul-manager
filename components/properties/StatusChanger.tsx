@@ -38,7 +38,8 @@ export default function StatusChanger({
         toast("상태가 변경되었습니다", "success");
         router.refresh();
       } else {
-        toast("상태 변경에 실패했습니다", "error");
+        const body = await res.json().catch(() => null);
+        toast(body?.error || "상태 변경에 실패했습니다", "error");
       }
     } catch {
       toast("네트워크 오류가 발생했습니다", "error");
