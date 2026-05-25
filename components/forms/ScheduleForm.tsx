@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import {
   scheduleSchema,
@@ -17,7 +17,11 @@ import Field from "./Field";
 import { useToast } from "@/components/ui/Toast";
 import { CATEGORY_LABELS } from "@/components/calendar/ScheduleBadge";
 import DeleteScheduleButton from "@/components/calendar/DeleteScheduleButton";
-import { calculateFee, getMonthlyRentAmount } from "@/lib/utils/brokerageFee";
+import {
+  calculateFee,
+  getMonthlyRentAmount,
+} from "@/lib/utils/brokerageFee";
+import { formatPrice } from "@/lib/format/property";
 
 interface ScheduleFormProps {
   initialData?: Schedule;
@@ -44,28 +48,11 @@ const CATEGORIES: ScheduleCategory[] = [
   "etc",
 ];
 
-const DEAL_LABEL: Record<string, string> = {
-  sale: "매매가",
-  jeonse: "전세금",
-  monthly: "환산액",
-};
-
-/** 매물의 거래유형에 따른 거래금액 산출 */
-function getTransactionAmount(p: PropertyOption): number | null {
-  switch (p.deal_type) {
-    case "sale":
-      return p.sale_price;
-    case "jeonse":
-      return p.jeonse_price;
-    case "monthly":
-      if (p.deposit != null && p.monthly_rent != null) {
-        return getMonthlyRentAmount(p.deposit, p.monthly_rent);
-      }
-      return null;
-    default:
-      return null;
-  }
-}
+const DEAL_TYPES: { value: DealType; label: string }[] = [
+  { value: "sale", label: "매매" },
+  { value: "jeonse", label: "전세" },
+  { value: "monthly", label: "월세" },
+];
 
 export default function ScheduleForm({
   initialData,
@@ -76,14 +63,14 @@ export default function ScheduleForm({
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
   const [useTime, setUseTime] = useState(!!initialData?.schedule_time);
   const [properties, setProperties] = useState<PropertyOption[]>([]);
-  const [amountManuallyEdited, setAmountManuallyEdited] = useState(
-    !!(initialData?.transaction_amount != null)
-  );
-  const [feeManuallyEdited, setFeeManuallyEdited] = useState(
-    !!(initialData?.fee != null)
-  );
   const { toast } = useToast();
   const isEdit = !!scheduleId;
+
+  // 계약서 전용 상태
+  const [contractDealType, setContractDealType] = useState<DealType>("sale");
+  const [contractAmount, setContractAmount] = useState<string>("");
+  const [monthlyDeposit, setMonthlyDeposit] = useState<string>("");
+  const [monthlyRent, setMonthlyRent] = useState<string>("");
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -124,66 +111,66 @@ export default function ScheduleForm({
       .catch(() => setProperties([]));
   }, []);
 
-  // 매물 선택 시 → 거래금액 + 복비 자동 채움
-  const autoFillFromProperty = useCallback(
-    (property: PropertyOption | undefined) => {
-      if (!property || selectedCategory !== "contract") return;
-
-      const amount = getTransactionAmount(property);
-      if (amount == null) return;
-
-      if (!amountManuallyEdited) {
-        setValue("transaction_amount", amount);
-      }
-
-      const currentAmount = amountManuallyEdited
-        ? getValues("transaction_amount")
-        : amount;
-
-      if (!feeManuallyEdited && currentAmount && !isNaN(currentAmount)) {
-        const fee = calculateFee(property.deal_type as DealType, currentAmount);
-        setValue("fee", fee);
-      }
-    },
-    [
-      selectedCategory,
-      amountManuallyEdited,
-      feeManuallyEdited,
-      setValue,
-      getValues,
-    ]
-  );
-
-  // 매물 변경 시 자동 채움
+  // 매물 선택 시 거래유형 기본값 설정
   useEffect(() => {
-    if (selectedCategory !== "contract" || !watchedPropertyId) return;
-    const prop = properties.find((p) => p.id === watchedPropertyId);
-    if (prop) autoFillFromProperty(prop);
-  }, [watchedPropertyId, properties, selectedCategory, autoFillFromProperty]);
+    if (selectedCategory !== "contract" || !selectedProperty) return;
+    setContractDealType(selectedProperty.deal_type as DealType);
+  }, [watchedPropertyId, selectedProperty, selectedCategory]);
+
+  // 수정 모드: 기존 데이터로 초기화
+  useEffect(() => {
+    if (!initialData || !selectedProperty) return;
+    if (initialData.category !== "contract") return;
+
+    setContractDealType(selectedProperty.deal_type as DealType);
+    if (initialData.transaction_amount != null) {
+      setContractAmount(String(initialData.transaction_amount));
+    }
+  }, [initialData, selectedProperty]);
+
+  // 환산액 계산 (월세)
+  const monthlyConvertedAmount = (() => {
+    const dep = parseFloat(monthlyDeposit);
+    const rent = parseFloat(monthlyRent);
+    if (isNaN(dep) || isNaN(rent)) return null;
+    return getMonthlyRentAmount(dep, rent);
+  })();
+
+  // 실제 거래금액 (fee 계산에 사용)
+  const effectiveAmount = (() => {
+    if (contractDealType === "monthly") {
+      return monthlyConvertedAmount;
+    }
+    const val = parseFloat(contractAmount);
+    return isNaN(val) || val <= 0 ? null : val;
+  })();
+
+  // 최대중개보수 자동 계산
+  const maxFee =
+    effectiveAmount != null && effectiveAmount > 0
+      ? calculateFee(contractDealType, effectiveAmount)
+      : null;
+
+  // effectiveAmount/maxFee → form values 동기화
+  useEffect(() => {
+    if (selectedCategory !== "contract") return;
+    setValue(
+      "transaction_amount",
+      effectiveAmount != null && effectiveAmount > 0 ? effectiveAmount : null
+    );
+    setValue("fee", maxFee);
+  }, [effectiveAmount, maxFee, selectedCategory, setValue]);
 
   // category 변경 시 contract 전용 필드 초기화
   useEffect(() => {
     if (selectedCategory !== "contract") {
       setValue("transaction_amount", null);
       setValue("fee", null);
-      setAmountManuallyEdited(false);
-      setFeeManuallyEdited(false);
+      setContractAmount("");
+      setMonthlyDeposit("");
+      setMonthlyRent("");
     }
   }, [selectedCategory, setValue]);
-
-  // 거래금액 수동 변경 시 복비 재계산
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmountManuallyEdited(true);
-    const val = e.target.valueAsNumber;
-
-    if (!feeManuallyEdited && selectedProperty && !isNaN(val) && val > 0) {
-      const fee = calculateFee(
-        selectedProperty.deal_type as DealType,
-        val
-      );
-      setValue("fee", fee);
-    }
-  };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,11 +179,8 @@ export default function ScheduleForm({
 
     try {
       const raw = getValues();
-      // 시간 체크박스 OFF면 null
       if (!useTime) raw.schedule_time = null;
-      // 빈 select → null
       if (raw.property_id === "") raw.property_id = null;
-      // NaN 방어 (빈 number 입력)
       if (
         typeof raw.transaction_amount === "number" &&
         isNaN(raw.transaction_amount)
@@ -244,17 +228,6 @@ export default function ScheduleForm({
 
   const isContract = selectedCategory === "contract";
 
-  // 거래금액 안내 텍스트
-  const amountHint = (() => {
-    if (!isContract || !selectedProperty) return null;
-    const dt = selectedProperty.deal_type;
-    const label = DEAL_LABEL[dt] || "";
-    if (dt === "monthly" && selectedProperty.deposit != null && selectedProperty.monthly_rent != null) {
-      return `${label} (보증금 + 월세 × 100)`;
-    }
-    return `${label} 기준`;
-  })();
-
   return (
     <form onSubmit={handleFormSubmit} className="flex flex-col gap-5 pb-24">
       {/* 제목 */}
@@ -282,7 +255,7 @@ export default function ScheduleForm({
         />
       </Field>
 
-      {/* 시간 (체크박스 ON/OFF) */}
+      {/* 시간 */}
       <div className="space-y-2">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
@@ -348,60 +321,109 @@ export default function ScheduleForm({
         </select>
       </Field>
 
-      {/* 계약서 전용: 거래금액 + 복비 */}
+      {/* 계약서 전용: 거래유형 + 금액 + 최대중개보수 */}
       {isContract && (
         <>
-          <Field
-            label="거래금액"
-            htmlFor="transaction_amount"
-            error={serverErrors.transaction_amount}
-          >
-            <div className="relative">
-              <Input
-                id="transaction_amount"
-                type="number"
-                inputMode="numeric"
-                {...register("transaction_amount", {
-                  valueAsNumber: true,
-                  onChange: handleAmountChange,
-                })}
-                placeholder="매물 선택 시 자동 입력"
-                className="h-[52px] text-base pr-14"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-base">
-                만원
-              </span>
+          {/* 거래유형 */}
+          <Field label="거래유형" required>
+            <div className="flex gap-2">
+              {DEAL_TYPES.map((dt) => (
+                <button
+                  key={dt.value}
+                  type="button"
+                  onClick={() => {
+                    setContractDealType(dt.value);
+                    setContractAmount("");
+                    setMonthlyDeposit("");
+                    setMonthlyRent("");
+                  }}
+                  className={cn(
+                    "flex-1 h-12 rounded-xl text-base font-semibold transition-colors",
+                    contractDealType === dt.value
+                      ? "bg-primary text-white"
+                      : "bg-white text-muted-foreground border border-border"
+                  )}
+                >
+                  {dt.label}
+                </button>
+              ))}
             </div>
-            {amountHint && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {amountHint}
-              </p>
-            )}
           </Field>
 
-          <Field label="중개보수" htmlFor="fee" error={serverErrors.fee}>
-            <div className="relative">
-              <Input
-                id="fee"
-                type="number"
-                inputMode="numeric"
-                {...register("fee", {
-                  valueAsNumber: true,
-                  onChange: () => setFeeManuallyEdited(true),
-                })}
-                placeholder="자동 계산"
-                className="h-[52px] text-base pr-14"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-base">
-                만원
-              </span>
-            </div>
-            {!feeManuallyEdited && selectedProperty && (
+          {/* 금액 입력 */}
+          {contractDealType === "monthly" ? (
+            <>
+              <Field label="보증금" htmlFor="monthly_deposit">
+                <div className="relative">
+                  <Input
+                    id="monthly_deposit"
+                    type="number"
+                    inputMode="numeric"
+                    value={monthlyDeposit}
+                    onChange={(e) => setMonthlyDeposit(e.target.value)}
+                    placeholder="예: 500"
+                    className="h-[52px] text-base pr-14"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-base">
+                    만원
+                  </span>
+                </div>
+              </Field>
+              <Field label="월세" htmlFor="monthly_rent_input">
+                <div className="relative">
+                  <Input
+                    id="monthly_rent_input"
+                    type="number"
+                    inputMode="numeric"
+                    value={monthlyRent}
+                    onChange={(e) => setMonthlyRent(e.target.value)}
+                    placeholder="예: 50"
+                    className="h-[52px] text-base pr-14"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-base">
+                    만원
+                  </span>
+                </div>
+              </Field>
+              {monthlyConvertedAmount != null && (
+                <p className="text-sm text-muted-foreground -mt-2">
+                  환산액: {formatPrice(monthlyConvertedAmount)}
+                </p>
+              )}
+            </>
+          ) : (
+            <Field label="거래금액" htmlFor="contract_amount">
+              <div className="relative">
+                <Input
+                  id="contract_amount"
+                  type="number"
+                  inputMode="numeric"
+                  value={contractAmount}
+                  onChange={(e) => setContractAmount(e.target.value)}
+                  placeholder="예: 15000"
+                  className="h-[52px] text-base pr-14"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-base">
+                  만원
+                </span>
+              </div>
+            </Field>
+          )}
+
+          {/* 최대중개보수 (읽기 전용) */}
+          <div className="rounded-xl border border-border p-4 bg-muted/30">
+            <p className="text-sm font-bold text-muted-foreground mb-1">
+              최대중개보수 (법정 상한)
+            </p>
+            <p className="text-2xl font-bold text-foreground">
+              {maxFee != null ? formatPrice(maxFee) : "-"}
+            </p>
+            {maxFee != null && (
               <p className="text-sm text-muted-foreground mt-1">
-                법정 상한요율 기준 자동 계산
+                실제 중개보수는 협의 가능
               </p>
             )}
-          </Field>
+          </div>
         </>
       )}
 
@@ -423,7 +445,7 @@ export default function ScheduleForm({
         </div>
       )}
 
-      {/* 제출 — 하단 고정 */}
+      {/* 제출 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border p-4 z-40">
         <div className="max-w-3xl mx-auto">
           <Button
