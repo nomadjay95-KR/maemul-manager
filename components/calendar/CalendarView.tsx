@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { Schedule, ScheduleCategory } from "@/types/schedule";
 import { CategoryDot } from "./ScheduleBadge";
 import DaySchedules from "./DaySchedules";
@@ -13,14 +13,17 @@ interface CalendarViewProps {
 }
 
 export default function CalendarView({
-  year,
-  month,
-  schedules,
+  year: initialYear,
+  month: initialMonth,
+  schedules: initialSchedules,
 }: CalendarViewProps) {
+  const [year, setYear] = useState(initialYear);
+  const [month, setMonth] = useState(initialMonth);
+  const [schedules, setSchedules] = useState(initialSchedules);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // 월 변경 시 서버에서 데이터를 다시 가져와야 하므로 URL 이동
-  const handleMonthChange = (delta: number) => {
+  const handleMonthChange = useCallback(async (delta: number) => {
     let newMonth = month + delta;
     let newYear = year;
     if (newMonth < 1) {
@@ -30,9 +33,23 @@ export default function CalendarView({
       newMonth = 1;
       newYear++;
     }
-    // URL 변경으로 서버 리렌더링
-    window.location.href = `/main?tab=calendar&year=${newYear}&month=${newMonth}`;
-  };
+
+    setLoading(true);
+    setSelectedDate(null);
+    try {
+      const res = await fetch(`/api/schedules?year=${newYear}&month=${newMonth}`);
+      if (res.ok) {
+        const data = await res.json();
+        setYear(newYear);
+        setMonth(newMonth);
+        setSchedules(data);
+      }
+    } catch {
+      // 실패 시 현재 월 유지
+    } finally {
+      setLoading(false);
+    }
+  }, [year, month]);
 
   // 날짜별 일정 매핑
   const schedulesByDate = useMemo(() => {
@@ -49,15 +66,13 @@ export default function CalendarView({
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month - 1, 1);
     const lastDay = new Date(year, month, 0);
-    const startDayOfWeek = firstDay.getDay(); // 0=일
+    const startDayOfWeek = firstDay.getDay();
     const totalDays = lastDay.getDate();
 
     const days: (number | null)[] = [];
-    // 앞쪽 빈 칸
     for (let i = 0; i < startDayOfWeek; i++) {
       days.push(null);
     }
-    // 날짜 채우기
     for (let d = 1; d <= totalDays; d++) {
       days.push(d);
     }
@@ -80,7 +95,8 @@ export default function CalendarView({
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => handleMonthChange(-1)}
-          className="h-10 w-10 rounded-lg text-lg font-bold text-muted-foreground hover:bg-muted transition-colors flex items-center justify-center"
+          disabled={loading}
+          className="h-10 w-10 rounded-lg text-lg font-bold text-muted-foreground hover:bg-muted transition-colors flex items-center justify-center disabled:opacity-50"
         >
           &lt;
         </button>
@@ -89,7 +105,8 @@ export default function CalendarView({
         </h2>
         <button
           onClick={() => handleMonthChange(1)}
-          className="h-10 w-10 rounded-lg text-lg font-bold text-muted-foreground hover:bg-muted transition-colors flex items-center justify-center"
+          disabled={loading}
+          className="h-10 w-10 rounded-lg text-lg font-bold text-muted-foreground hover:bg-muted transition-colors flex items-center justify-center disabled:opacity-50"
         >
           &gt;
         </button>
@@ -111,7 +128,7 @@ export default function CalendarView({
       </div>
 
       {/* 날짜 그리드 */}
-      <div className="grid grid-cols-7">
+      <div className={cn("grid grid-cols-7", loading && "opacity-50 pointer-events-none")}>
         {calendarDays.map((day, idx) => {
           if (day === null) {
             return <div key={`empty-${idx}`} className="h-14" />;
@@ -123,7 +140,6 @@ export default function CalendarView({
           const isToday = todayStr === String(day);
           const dayOfWeek = (idx) % 7;
 
-          // 종류별 고유 색상 점 (최대 3개)
           const uniqueCategories = Array.from(
             new Set(daySchedules.map((s) => s.category))
           ).slice(0, 3) as ScheduleCategory[];
@@ -156,7 +172,6 @@ export default function CalendarView({
                 {day}
               </span>
 
-              {/* 일정 점 표시 */}
               {uniqueCategories.length > 0 && (
                 <div className="flex gap-[3px] mt-0.5">
                   {uniqueCategories.map((cat) => (
