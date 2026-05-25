@@ -3,6 +3,12 @@ import Link from "next/link";
 import { fetchProperties } from "@/lib/queries/properties";
 import { fetchInquiries } from "@/lib/queries/inquiries";
 import { fetchSchedulesByMonth } from "@/lib/queries/schedules";
+import {
+  fetchMonthlyContracts,
+  fetchMonthlyRevenue,
+  fetchUpcomingBalances,
+  fetchCurrentMonthSummary,
+} from "@/lib/queries/statistics";
 import PropertyFilter from "@/components/properties/PropertyFilter";
 import PropertyCard from "@/components/properties/PropertyCard";
 import InquiryFilter from "@/components/inquiries/InquiryFilter";
@@ -11,6 +17,10 @@ import LockButton from "@/components/properties/LockButton";
 import TabNav from "@/components/layout/TabNav";
 import EmptyState from "@/components/ui/EmptyState";
 import CalendarView from "@/components/calendar/CalendarView";
+import SummaryCards from "@/components/statistics/SummaryCards";
+import ContractChart from "@/components/statistics/ContractChart";
+import RevenueChart from "@/components/statistics/RevenueChart";
+import UpcomingBalancesView from "@/components/statistics/UpcomingBalances";
 
 const VALID_PROPERTY_STATUS = ["active", "reserved", "completed"] as const;
 const VALID_PROPERTY_TYPE = ["villa", "shop"] as const;
@@ -42,12 +52,15 @@ export default async function MainPage({ searchParams }: PageProps) {
       ? "inquiries"
       : params.tab === "calendar"
         ? "calendar"
-        : "properties";
+        : params.tab === "statistics"
+          ? "statistics"
+          : "properties";
 
   const TAB_TITLES = {
     properties: "매물장",
     inquiries: "문의장",
     calendar: "캘린더",
+    statistics: "통계",
   } as const;
 
   return (
@@ -80,13 +93,15 @@ export default async function MainPage({ searchParams }: PageProps) {
             search={params.search}
             orderBy={params.orderBy}
           />
-        ) : (
+        ) : tab === "calendar" ? (
           <CalendarTab year={params.year} month={params.month} />
+        ) : (
+          <StatisticsTab />
         )}
       </div>
 
       {/* 하단 고정 등록 버튼 (캘린더 탭에서는 숨김) */}
-      {tab !== "calendar" && (
+      {tab !== "calendar" && tab !== "statistics" && (
         <div className="fixed bottom-6 left-4 right-4 z-40 flex justify-center">
           <Link
             href={tab === "properties" ? "/properties/new" : "/inquiries/new"}
@@ -183,4 +198,25 @@ async function CalendarTab({
   const schedules = await fetchSchedulesByMonth(y, m);
 
   return <CalendarView year={y} month={m} schedules={schedules} />;
+}
+
+async function StatisticsTab() {
+  const [summary, contracts, revenue, balances] = await Promise.all([
+    fetchCurrentMonthSummary(),
+    fetchMonthlyContracts(),
+    fetchMonthlyRevenue(),
+    fetchUpcomingBalances(),
+  ]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <SummaryCards
+        contractCount={summary.contractCount}
+        expectedRevenue={summary.expectedRevenue}
+      />
+      <ContractChart data={contracts} />
+      <RevenueChart data={revenue} />
+      <UpcomingBalancesView balances={balances} />
+    </div>
+  );
 }

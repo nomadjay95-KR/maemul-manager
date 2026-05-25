@@ -8,6 +8,7 @@ import {
 } from "@/lib/validations/schedule";
 import type { Schedule } from "@/types/schedule";
 import type { ScheduleCategory } from "@/types/schedule";
+import type { DealType } from "@/types/property";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import Field from "./Field";
 import { useToast } from "@/components/ui/Toast";
 import { CATEGORY_LABELS } from "@/components/calendar/ScheduleBadge";
 import DeleteScheduleButton from "@/components/calendar/DeleteScheduleButton";
+import { calculateFee, getMonthlyRentAmount } from "@/lib/utils/brokerageFee";
 
 interface ScheduleFormProps {
   initialData?: Schedule;
@@ -27,6 +29,11 @@ interface PropertyOption {
   id: string;
   address: string;
   type: string;
+  deal_type: string;
+  deposit: number | null;
+  monthly_rent: number | null;
+  jeonse_price: number | null;
+  sale_price: number | null;
 }
 
 const CATEGORIES: ScheduleCategory[] = [
@@ -46,6 +53,9 @@ export default function ScheduleForm({
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
   const [useTime, setUseTime] = useState(!!initialData?.schedule_time);
   const [properties, setProperties] = useState<PropertyOption[]>([]);
+  const [feeManuallyEdited, setFeeManuallyEdited] = useState(
+    !!(initialData?.fee != null && initialData.fee > 0)
+  );
   const { toast } = useToast();
   const isEdit = !!scheduleId;
 
@@ -60,6 +70,8 @@ export default function ScheduleForm({
           category: initialData.category,
           property_id: initialData.property_id,
           memo: initialData.memo,
+          transaction_amount: initialData.transaction_amount,
+          fee: initialData.fee,
         }
       : {
           title: "",
@@ -68,10 +80,14 @@ export default function ScheduleForm({
           category: "contract",
           property_id: null,
           memo: null,
+          transaction_amount: null,
+          fee: null,
         },
   });
 
   const selectedCategory = watch("category");
+  const watchedAmount = watch("transaction_amount");
+  const watchedPropertyId = watch("property_id");
 
   // active 매물 목록 로드
   useEffect(() => {
@@ -80,6 +96,51 @@ export default function ScheduleForm({
       .then((data) => setProperties(data))
       .catch(() => setProperties([]));
   }, []);
+
+  // 거래금액 변경 시 복비 자동 계산
+  useEffect(() => {
+    if (selectedCategory !== "contract" || !watchedAmount || feeManuallyEdited)
+      return;
+
+    const selectedProperty = properties.find(
+      (p) => p.id === watchedPropertyId
+    );
+    if (!selectedProperty) return;
+
+    const dealType = selectedProperty.deal_type as DealType;
+    let amount = watchedAmount;
+
+    // 월세인 경우 환산액 사용
+    if (
+      dealType === "monthly" &&
+      selectedProperty.deposit != null &&
+      selectedProperty.monthly_rent != null
+    ) {
+      amount = getMonthlyRentAmount(
+        selectedProperty.deposit,
+        selectedProperty.monthly_rent
+      );
+    }
+
+    const calculated = calculateFee(dealType, amount);
+    setValue("fee", calculated);
+  }, [
+    watchedAmount,
+    watchedPropertyId,
+    selectedCategory,
+    feeManuallyEdited,
+    properties,
+    setValue,
+  ]);
+
+  // category 변경 시 contract 전용 필드 초기화
+  useEffect(() => {
+    if (selectedCategory !== "contract") {
+      setValue("transaction_amount", null);
+      setValue("fee", null);
+      setFeeManuallyEdited(false);
+    }
+  }, [selectedCategory, setValue]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +151,10 @@ export default function ScheduleForm({
       const raw = getValues();
       // 시간 체크박스 OFF면 null
       if (!useTime) raw.schedule_time = null;
+      // NaN 방어 (빈 number 입력)
+      if (typeof raw.transaction_amount === "number" && isNaN(raw.transaction_amount))
+        raw.transaction_amount = null;
+      if (typeof raw.fee === "number" && isNaN(raw.fee)) raw.fee = null;
 
       const parsed = scheduleSchema.safeParse(raw);
 
@@ -125,6 +190,8 @@ export default function ScheduleForm({
       setSubmitting(false);
     }
   };
+
+  const isContract = selectedCategory === "contract";
 
   return (
     <form onSubmit={handleFormSubmit} className="flex flex-col gap-5 pb-24">
@@ -199,12 +266,18 @@ export default function ScheduleForm({
       </Field>
 
       {/* 연결 매물 */}
-      <Field label="연결 매물 (선택)">
+      <Field
+        label={isContract ? "연결 매물" : "연결 매물 (선택)"}
+        error={serverErrors.property_id}
+        required={isContract}
+      >
         <select
           {...register("property_id")}
           className="w-full h-[52px] px-3 rounded-xl border border-border text-base bg-white"
         >
-          <option value="">매물 없음 (독립 일정)</option>
+          <option value="">
+            {isContract ? "매물을 선택해주세요" : "매물 없음 (독립 일정)"}
+          </option>
           {properties.map((p) => (
             <option key={p.id} value={p.id}>
               {p.type === "villa" ? "[빌라]" : "[상가]"} {p.address}
@@ -212,6 +285,55 @@ export default function ScheduleForm({
           ))}
         </select>
       </Field>
+
+      {/* 계약서 전용: 거래금액 + 복비 */}
+      {isContract && (
+        <>
+          <Field
+            label="거래금액"
+            htmlFor="transaction_amount"
+            error={serverErrors.transaction_amount}
+          >
+            <div className="relative">
+              <Input
+                id="transaction_amount"
+                type="number"
+                inputMode="numeric"
+                {...register("transaction_amount", { valueAsNumber: true })}
+                placeholder="예: 15000"
+                className="h-[52px] text-base pr-14"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-base">
+                만원
+              </span>
+            </div>
+          </Field>
+
+          <Field label="중개보수" htmlFor="fee" error={serverErrors.fee}>
+            <div className="relative">
+              <Input
+                id="fee"
+                type="number"
+                inputMode="numeric"
+                {...register("fee", {
+                  valueAsNumber: true,
+                  onChange: () => setFeeManuallyEdited(true),
+                })}
+                placeholder="자동 계산"
+                className="h-[52px] text-base pr-14"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-base">
+                만원
+              </span>
+            </div>
+            {!feeManuallyEdited && watchedAmount && (
+              <p className="text-sm text-muted-foreground mt-1">
+                법정 상한요율 기준 자동 계산
+              </p>
+            )}
+          </Field>
+        </>
+      )}
 
       {/* 메모 */}
       <Field label="메모" htmlFor="memo">

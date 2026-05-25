@@ -6,7 +6,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("properties")
-    .select("id, address, type")
+    .select("id, address, type, deal_type, deposit, monthly_rent, jeonse_price, sale_price")
     .in("status", ["active", "reserved"])
     .order("address", { ascending: true });
 

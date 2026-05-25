@@ -18,6 +18,8 @@ export interface Schedule {
   category: ScheduleCategory;
   property_id: string | null;
   memo: string | null;
+  transaction_amount: number | null;
+  fee: number | null;
   created_at: string;
   updated_at: string;
 }

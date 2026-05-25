@@ -7,6 +7,7 @@ const TABS = [
   { value: "properties", label: "매물장" },
   { value: "inquiries", label: "문의장" },
   { value: "calendar", label: "캘린더" },
+  { value: "statistics", label: "통계" },
 ] as const;
 
 export default function TabNav() {
@@ -21,7 +22,7 @@ export default function TabNav() {
           key={tab.value}
           onClick={() => router.push(`/main?tab=${tab.value}`)}
           className={cn(
-            "flex-1 sm:flex-none h-14 px-6 text-lg font-bold transition-colors relative",
+            "flex-1 sm:flex-none h-14 px-4 text-base sm:text-lg font-bold transition-colors relative",
             currentTab === tab.value
               ? "text-primary"
               : "text-muted-foreground hover:text-foreground"
