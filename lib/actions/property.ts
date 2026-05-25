@@ -18,7 +18,6 @@ async function uploadImages(propertyId: string, files: File[], startOrder = 0) {
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${propertyId}/${Date.now()}_${i}.${ext}`;
 
-    // Next.js 서버에서 Web API File → Buffer 변환 (Node.js 호환)
     const buffer = Buffer.from(await file.arrayBuffer());
 
     const { error: uploadError } = await supabase.storage

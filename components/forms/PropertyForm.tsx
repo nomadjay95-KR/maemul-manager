@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   propertySchema,
@@ -48,8 +48,8 @@ export default function PropertyForm({
   initialData,
   propertyId,
 }: PropertyFormProps) {
-  const [newImages, setNewImages] = useState<File[]>([]);
-  const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
+  const newImagesRef = useRef<File[]>([]);
+  const deletedIdsRef = useRef<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
   const isEdit = !!propertyId;
@@ -118,8 +118,8 @@ export default function PropertyForm({
   const dealType = watch("deal_type");
 
   const handleImageChange = (files: File[], deletedIds: string[]) => {
-    setNewImages(files);
-    setDeletedImageIds(deletedIds);
+    newImagesRef.current = files;
+    deletedIdsRef.current = deletedIds;
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -143,9 +143,11 @@ export default function PropertyForm({
 
       const formData = new FormData();
       formData.set("data", JSON.stringify(parsed.data));
-      newImages.forEach((file) => formData.append("images", file));
-      if (deletedImageIds.length > 0) {
-        formData.set("deletedImageIds", JSON.stringify(deletedImageIds));
+      const filesToUpload = newImagesRef.current;
+      filesToUpload.forEach((file) => formData.append("images", file));
+      const idsToDelete = deletedIdsRef.current;
+      if (idsToDelete.length > 0) {
+        formData.set("deletedImageIds", JSON.stringify(idsToDelete));
       }
 
       const url = isEdit ? `/api/properties/${propertyId}` : "/api/properties";
