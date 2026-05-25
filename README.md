@@ -1,70 +1,91 @@
-# 부동산 매물장 관리 시스템
+# 하나부동산 매물장
 
-공인중개사를 위한 모바일 최적화 매물 관리 웹앱. PIN 잠금, 매물 CRUD, 사진 관리, 문의 관리 및 매물-문의 조건 매칭 기능을 제공합니다.
+공인중개사를 위한 모바일 최적화 매물 관리 웹앱.
+PIN 잠금, 매물/문의 CRUD, 사진 관리, 주소 검색, 매물-문의 조건 매칭 기능을 제공합니다.
+
+**URL**: https://maemul-manager.vercel.app
+
+## 완성된 기능
+
+### 인증
+- PIN 4자리 잠금 화면 (숫자 키패드, 진동 피드백)
+- httpOnly 쿠키 세션, 미인증 시 `/lock`으로 리다이렉트
+
+### 매물 관리
+- 빌라/상가 매물 등록·수정·삭제
+- 매물 상태 변경 (가능 → 계약중 → 완료)
+- 상태별·타입별 필터링
+- 사진 업로드 (최대 3장, Supabase Storage)
+- 카카오 주소 검색 (다음 우편번호 API)
+- 카카오맵 지도 표시
+
+### 문의 관리
+- 문의 등록·수정·삭제
+- 문의 상태 변경 (진행중 / 완료)
+- 상태별 필터링
+- 희망 조건 입력 (거래유형, 보증금, 월세, 방수)
+
+### 매물-문의 매칭
+- 문의 상세 페이지에서 조건에 맞는 매물 자동 표시
+- 매칭 기준: 거래유형, 보증금 범위, 월세 상한, 방수
+
+### UI/UX
+- 5060 사용자 대상 큰 글씨·큰 버튼 UI
+- 모바일/태블릿 최적화 반응형 디자인
+- 탭 기반 대시보드 (매물장 / 문의장)
+- 랜딩 페이지
 
 ## 기술 스택
 
-- **프레임워크**: Next.js 14 (App Router)
+- **프레임워크**: Next.js 14 (App Router) + TypeScript
 - **DB / Storage**: Supabase (PostgreSQL + Storage)
-- **UI**: shadcn/ui + Tailwind CSS
+- **UI**: Tailwind CSS + shadcn/ui
 - **폼 관리**: react-hook-form + Zod
+- **지도/주소**: 카카오맵 SDK + 다음 우편번호 API
 - **배포**: Vercel
 
-## 주요 기능
+## 환경변수
 
-- PIN 기반 잠금 화면
-- 매물 등록/수정/삭제 (빌라, 상가)
-- 사진 업로드 (최대 3장, Supabase Storage)
-- 매물 상태 관리 (가능/계약중/완료)
-- 문의 등록/수정/삭제
-- 문의-매물 조건 매칭 (거래유형, 보증금, 월세, 방수)
+| 변수명 | 설명 |
+|--------|------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public 키 |
+| `APP_PIN` | 앱 잠금 해제 PIN (기본: `1234`) |
+| `NEXT_PUBLIC_KAKAO_JS_KEY` | 카카오 JavaScript 앱 키 |
 
 ## 로컬 실행
 
 ```bash
-# 1. 의존성 설치
+# 의존성 설치
 npm install
 
-# 2. 환경변수 설정
+# 환경변수 설정
 cp .env.example .env.local
 # .env.local 파일을 열어 실제 값으로 수정
 
-# 3. 개발 서버 실행
+# 개발 서버 실행
 npm run dev
 ```
 
 `http://localhost:3000`에서 접속. 기본 PIN은 `1234`.
 
-## 환경변수
-
-| 변수명 | 설명 | 예시 |
-|--------|------|------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL | `https://xxx.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public 키 | `eyJhbGci...` |
-| `APP_PIN` | 앱 잠금 해제 PIN | `1234` |
-
 ## Vercel 배포
 
-### 1. GitHub 저장소 연결
+1. [Vercel](https://vercel.com)에서 GitHub 저장소 Import
+2. Environment Variables에 위 4개 환경변수 추가
+3. Deploy 클릭 → 이후 `main` push 시 자동 배포
 
-1. [Vercel](https://vercel.com)에 로그인
-2. **Add New → Project** 클릭
-3. GitHub 저장소를 Import
-4. Framework Preset이 **Next.js**로 자동 감지되는지 확인
-
-### 2. 환경변수 설정
-
-Vercel 프로젝트 설정 → **Environment Variables**에 아래 3개를 추가:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `APP_PIN`
-
-### 3. 배포
-
-**Deploy** 클릭. 이후 `main` 브랜치에 push할 때마다 자동 배포됩니다.
-
-### Supabase 설정 참고
+### Supabase 설정
 
 - Storage에 `property-photos` 버킷 생성 (public 접근 허용)
+- RLS 정책에 `TO anon` INSERT/SELECT/DELETE 허용
 - DB 테이블은 `supabase/migrations/` 폴더의 SQL 파일 참조
+
+## 카카오 개발자센터 설정
+
+1. [Kakao Developers](https://developers.kakao.com)에서 애플리케이션 생성
+2. **앱 키** → JavaScript 키 복사 → `NEXT_PUBLIC_KAKAO_JS_KEY`에 설정
+3. **플랫폼** → Web 플랫폼 등록
+   - `http://localhost:3000` (로컬 개발)
+   - `https://maemul-manager.vercel.app` (프로덕션)
+4. **카카오맵** → 활성화 (Kakao Maps API 사용 설정)
