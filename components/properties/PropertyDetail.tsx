@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { PropertyWithImages } from "@/types/property";
 import { TypeBadge, StatusBadge } from "./StatusBadge";
 import { formatPrice, getPriceText, DEAL_LABEL } from "@/lib/format/property";
+import AddressMap from "./AddressMap";
 
 function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null;
@@ -49,6 +50,9 @@ export default function PropertyDetail({ property }: { property: PropertyWithIma
           <StatusBadge status={p.status} />
         </div>
         <h2 className="text-xl font-bold text-foreground">{p.address}</h2>
+        <div className="mt-3">
+          <AddressMap address={p.address} />
+        </div>
       </div>
 
       {/* 가격 */}
