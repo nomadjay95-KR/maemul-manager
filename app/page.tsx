@@ -26,6 +26,12 @@ export default async function Home({ searchParams }: PageProps) {
         <h1 className="text-xl font-bold text-foreground">매물 목록</h1>
         <div className="flex gap-2">
           <Link
+            href="/inquiries"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-muted text-muted-foreground hover:bg-accent transition-colors"
+          >
+            문의
+          </Link>
+          <Link
             href="/properties/new"
             className="px-3 py-1.5 rounded-lg text-sm font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
           >
