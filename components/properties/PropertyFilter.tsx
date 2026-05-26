@@ -3,6 +3,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
+import { FILTER_KEYS } from "@/lib/constants/filterRanges";
+import FilterPanel from "./FilterPanel";
 
 const STATUS_OPTIONS = [
   { value: "", label: "전체" },
@@ -33,6 +35,12 @@ export default function PropertyFilter() {
   const currentOrderBy = searchParams.get("orderBy") ?? "";
   const currentSearch = searchParams.get("search") ?? "";
   const [searchInput, setSearchInput] = useState(currentSearch);
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  // 적용된 필터 개수
+  const activeFilterCount = FILTER_KEYS.filter(
+    (k) => !!searchParams.get(k)
+  ).length;
 
   const updateFilter = useCallback(
     (key: string, value: string) => {
@@ -91,7 +99,7 @@ export default function PropertyFilter() {
         ))}
       </div>
 
-      {/* 검색 + 정렬 */}
+      {/* 검색 + 필터 + 정렬 */}
       <div className="flex gap-2">
         <input
           type="text"
@@ -103,6 +111,17 @@ export default function PropertyFilter() {
           placeholder="주소 검색"
           className="flex-1 h-[52px] px-4 rounded-xl border border-border bg-white text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
+        <button
+          onClick={() => setFilterOpen(true)}
+          className={cn(
+            "h-[48px] px-4 rounded-xl text-[15px] font-medium transition-colors whitespace-nowrap flex-shrink-0",
+            activeFilterCount > 0
+              ? "bg-primary text-white"
+              : "bg-white text-muted-foreground border border-border hover:bg-accent"
+          )}
+        >
+          필터{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
+        </button>
         <select
           value={currentOrderBy}
           onChange={(e) => updateFilter("orderBy", e.target.value)}
@@ -115,6 +134,12 @@ export default function PropertyFilter() {
           ))}
         </select>
       </div>
+
+      {/* 필터 패널 */}
+      <FilterPanel
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+      />
     </div>
   );
 }

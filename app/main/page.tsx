@@ -45,6 +45,13 @@ interface PageProps {
     year?: string;
     month?: string;
     noteId?: string;
+    dealType?: string;
+    deposit?: string;
+    rent?: string;
+    rooms?: string;
+    occupancy?: string;
+    age?: string;
+    floor?: string;
   }>;
 }
 
@@ -104,6 +111,13 @@ export default async function MainPage({ searchParams }: PageProps) {
             type={params.type}
             search={params.search}
             orderBy={params.orderBy}
+            dealType={params.dealType}
+            deposit={params.deposit}
+            rent={params.rent}
+            rooms={params.rooms}
+            occupancy={params.occupancy}
+            age={params.age}
+            floor={params.floor}
           />
         ) : tab === "inquiries" ? (
           <InquiriesTab
@@ -140,17 +154,38 @@ async function PropertiesTab({
   type,
   search,
   orderBy,
+  dealType,
+  deposit,
+  rent,
+  rooms,
+  occupancy,
+  age,
+  floor,
 }: {
   status?: string;
   type?: string;
   search?: string;
   orderBy?: string;
+  dealType?: string;
+  deposit?: string;
+  rent?: string;
+  rooms?: string;
+  occupancy?: string;
+  age?: string;
+  floor?: string;
 }) {
   const properties = await fetchProperties({
     status: parseEnum(status, VALID_PROPERTY_STATUS),
     type: parseEnum(type, VALID_PROPERTY_TYPE),
     search: search || undefined,
     orderBy: orderBy || undefined,
+    dealType: dealType || undefined,
+    deposit: deposit || undefined,
+    rent: rent || undefined,
+    rooms: rooms || undefined,
+    occupancy: occupancy || undefined,
+    age: age || undefined,
+    floor: floor || undefined,
   });
 
   return (

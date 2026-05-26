@@ -7,11 +7,33 @@ import type {
   PropertyWithImages,
 } from "@/types/property";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyRangeFilter(query: any, field: string, rangeStr: string) {
+  const parts = rangeStr.split("~");
+  const min = parts[0] ? parseInt(parts[0], 10) : undefined;
+  const max = parts[1] ? parseInt(parts[1], 10) : undefined;
+
+  if (min !== undefined && !isNaN(min)) {
+    query = query.gte(field, min);
+  }
+  if (max !== undefined && !isNaN(max)) {
+    query = query.lte(field, max);
+  }
+  return query;
+}
+
 export interface PropertyFilters {
   status?: PropertyStatus;
   type?: PropertyType;
   search?: string;
   orderBy?: string;
+  dealType?: string;
+  deposit?: string;
+  rent?: string;
+  rooms?: string;
+  occupancy?: string;
+  age?: string;
+  floor?: string;
 }
 
 export async function fetchProperties(
@@ -30,6 +52,55 @@ export async function fetchProperties(
 
   if (filters?.search) {
     query = query.ilike("address", `%${filters.search}%`);
+  }
+
+  // 거래유형
+  if (filters?.dealType) {
+    query = query.eq("deal_type", filters.dealType);
+  }
+
+  // 보증금 구간
+  if (filters?.deposit) {
+    query = applyRangeFilter(query, "deposit", filters.deposit);
+  }
+
+  // 월세 구간
+  if (filters?.rent) {
+    query = applyRangeFilter(query, "monthly_rent", filters.rent);
+  }
+
+  // 방 개수
+  if (filters?.rooms) {
+    if (filters.rooms === "3+") {
+      query = query.gte("rooms", 3);
+    } else {
+      query = query.eq("rooms", parseInt(filters.rooms, 10));
+    }
+  }
+
+  // 입주상태
+  if (filters?.occupancy) {
+    query = query.eq("occupancy_status", filters.occupancy);
+  }
+
+  // 연식
+  if (filters?.age) {
+    if (filters.age === "~5") {
+      query = query.not("building_age", "is", null).lte("building_age", 5);
+    } else if (filters.age === "~10") {
+      query = query.not("building_age", "is", null).lte("building_age", 10);
+    } else if (filters.age === "10~") {
+      query = query.gte("building_age", 10);
+    }
+  }
+
+  // 층수
+  if (filters?.floor) {
+    if (filters.floor === "under") {
+      query = query.ilike("floor", "%지하%");
+    } else if (filters.floor === "above") {
+      query = query.not("floor", "ilike", "%지하%");
+    }
   }
 
   switch (filters?.orderBy) {
