@@ -1,5 +1,8 @@
-import { createCanvas } from "@napi-rs/canvas";
+import { createCanvas, GlobalFonts } from "@napi-rs/canvas";
 import { writeFileSync } from "fs";
+
+// macOS 한글 폰트 등록
+GlobalFonts.registerFromPath("/System/Library/Fonts/AppleSDGothicNeo.ttc", "AppleSDGothicNeo");
 
 const BG_COLOR = "#0066FF";
 const sizes = [192, 512];
@@ -26,7 +29,7 @@ for (const size of sizes) {
 
   // "하나" 텍스트
   const fontSize = Math.round(size * 0.32);
-  ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+  ctx.font = `bold ${fontSize}px "AppleSDGothicNeo", Arial, sans-serif`;
   ctx.fillStyle = "white";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
