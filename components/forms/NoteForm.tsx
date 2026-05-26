@@ -36,7 +36,7 @@ export default function NoteForm({ initialData, noteId }: NoteFormProps) {
   const { toast } = useToast();
   const isEdit = !!noteId;
 
-  const { register, getValues } = useForm<NoteFormValues>({
+  const { register, getValues, setValue } = useForm<NoteFormValues>({
     defaultValues: initialData
       ? {
           title: initialData.title,
@@ -56,17 +56,27 @@ export default function NoteForm({ initialData, noteId }: NoteFormProps) {
   useEffect(() => {
     fetch("/api/properties/active")
       .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setProperties(data))
+      .then((data) => {
+        setProperties(data);
+        if (initialData?.property_id) {
+          setValue("property_id", initialData.property_id);
+        }
+      })
       .catch(() => setProperties([]));
-  }, []);
+  }, [initialData?.property_id, setValue]);
 
   // 문의 목록 로드
   useEffect(() => {
     fetch("/api/inquiries")
       .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setInquiries(data))
+      .then((data) => {
+        setInquiries(data);
+        if (initialData?.inquiry_id) {
+          setValue("inquiry_id", initialData.inquiry_id);
+        }
+      })
       .catch(() => setInquiries([]));
-  }, []);
+  }, [initialData?.inquiry_id, setValue]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
