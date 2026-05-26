@@ -1,17 +1,15 @@
 import { redirect } from "next/navigation";
-import { fetchUsers, fetchUserCount } from "@/lib/queries/users";
+import { fetchUsers } from "@/lib/queries/users";
 import LoginFlow from "@/components/lock/LoginFlow";
 
 export const dynamic = "force-dynamic";
 
 export default async function LockPage() {
-  const userCount = await fetchUserCount();
+  const users = await fetchUsers();
 
-  if (userCount === 0) {
+  if (users.length === 0) {
     redirect("/signup");
   }
-
-  const users = await fetchUsers();
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
