@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -26,7 +27,7 @@ const SORT_OPTIONS = [
   { value: "status", label: "상태순" },
 ] as const;
 
-export default function PropertyFilter() {
+export default function PropertyFilter({ exportButton }: { exportButton?: ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -133,6 +134,7 @@ export default function PropertyFilter() {
             </option>
           ))}
         </select>
+        {exportButton}
       </div>
 
       {/* 필터 패널 */}

@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ const SORT_OPTIONS = [
   { value: "inquiry_date", label: "문의일순" },
 ] as const;
 
-export default function InquiryFilter() {
+export default function InquiryFilter({ exportButton }: { exportButton?: ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -86,6 +87,7 @@ export default function InquiryFilter() {
             </option>
           ))}
         </select>
+        {exportButton}
       </div>
     </div>
   );

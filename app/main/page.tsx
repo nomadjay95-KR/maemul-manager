@@ -16,6 +16,8 @@ import InquiryFilter from "@/components/inquiries/InquiryFilter";
 import InquiryCard from "@/components/inquiries/InquiryCard";
 import LockButton from "@/components/properties/LockButton";
 import TabNav from "@/components/layout/TabNav";
+import PropertyExportButton from "@/components/properties/ExportButton";
+import InquiryExportButton from "@/components/inquiries/ExportButton";
 import EmptyState from "@/components/ui/EmptyState";
 import CalendarView from "@/components/calendar/CalendarView";
 import SummaryCards from "@/components/statistics/SummaryCards";
@@ -191,7 +193,7 @@ async function PropertiesTab({
   return (
     <>
       <Suspense fallback={null}>
-        <PropertyFilter />
+        <PropertyFilter exportButton={<PropertyExportButton properties={properties} />} />
       </Suspense>
       <div className="mt-4 flex flex-col gap-3">
         {properties.length === 0 ? (
@@ -224,7 +226,7 @@ async function InquiriesTab({
   return (
     <>
       <Suspense fallback={null}>
-        <InquiryFilter />
+        <InquiryFilter exportButton={<InquiryExportButton inquiries={inquiries} />} />
       </Suspense>
       <div className="mt-4 flex flex-col gap-3">
         {inquiries.length === 0 ? (
