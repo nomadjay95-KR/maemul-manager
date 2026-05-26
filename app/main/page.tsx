@@ -11,6 +11,7 @@ import {
 } from "@/lib/queries/statistics";
 import { fetchNotes } from "@/lib/queries/notes";
 import { fetchUsersForAdmin } from "@/lib/queries/users";
+import { fetchUpcomingEvents } from "@/lib/queries/notifications";
 import { getAuthUser } from "@/lib/auth";
 import PropertyFilter from "@/components/properties/PropertyFilter";
 import PropertyCard from "@/components/properties/PropertyCard";
@@ -28,6 +29,7 @@ import RevenueChart from "@/components/statistics/RevenueChart";
 import UpcomingBalancesView from "@/components/statistics/UpcomingBalances";
 import NoteLayout from "@/components/notes/NoteLayout";
 import UserManagement from "@/components/users/UserManagement";
+import NotificationBanner from "@/components/notifications/NotificationBanner";
 
 const VALID_PROPERTY_STATUS = ["active", "reserved", "completed"] as const;
 const VALID_PROPERTY_TYPE = ["villa", "shop"] as const;
@@ -71,6 +73,8 @@ export default async function MainPage({ searchParams }: PageProps) {
   const tab: TabValue = VALID_TABS.includes(params.tab as TabValue)
     ? (params.tab as TabValue)
     : "properties";
+
+  const upcomingEvents = await fetchUpcomingEvents();
 
   const TAB_TITLES: Record<TabValue, string> = {
     properties: "매물장",
@@ -118,8 +122,13 @@ export default async function MainPage({ searchParams }: PageProps) {
         <TabNav role={authUser?.role} />
       </Suspense>
 
-      {/* 탭 콘텐츠 */}
+      {/* 다가오는 일정 알림 */}
       <div className="mt-4">
+        <NotificationBanner events={upcomingEvents} />
+      </div>
+
+      {/* 탭 콘텐츠 */}
+      <div>
         {tab === "properties" ? (
           <PropertiesTab
             status={params.status}
