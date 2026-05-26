@@ -5,7 +5,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { PropertyImage } from "@/types/property";
 
-const MAX_IMAGES = 3;
+const MAX_IMAGES = 10;
 
 interface ImageUploadProps {
   existingImages?: PropertyImage[];

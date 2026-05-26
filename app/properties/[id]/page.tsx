@@ -32,6 +32,12 @@ export default async function PropertyPage({ params }: PageProps) {
         </Link>
         <div className="flex gap-3">
           <Link
+            href={`/properties/new?copyFrom=${property.id}`}
+            className="h-12 px-4 inline-flex items-center rounded-lg text-[15px] font-medium text-muted-foreground hover:bg-gray-100 transition-colors"
+          >
+            복사
+          </Link>
+          <Link
             href={`/properties/${property.id}/edit`}
             className="h-12 px-4 inline-flex items-center rounded-lg text-[15px] font-medium text-muted-foreground hover:bg-gray-100 transition-colors"
           >

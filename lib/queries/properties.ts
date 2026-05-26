@@ -51,7 +51,9 @@ export async function fetchProperties(
   }
 
   if (filters?.search) {
-    query = query.ilike("address", `%${filters.search}%`);
+    query = query.or(
+      `address.ilike.%${filters.search}%,memo.ilike.%${filters.search}%,notes.ilike.%${filters.search}%`
+    );
   }
 
   // 거래유형

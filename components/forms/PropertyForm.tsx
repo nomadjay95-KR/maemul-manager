@@ -180,7 +180,7 @@ export default function PropertyForm({
 
       {/* 사진 */}
       <div>
-        <Label className="text-[15px] font-bold mb-2 block">사진 (최대 3장)</Label>
+        <Label className="text-[15px] font-bold mb-2 block">사진 (최대 10장)</Label>
         <ImageUpload
           existingImages={initialData?.images}
           onChange={handleImageChange}

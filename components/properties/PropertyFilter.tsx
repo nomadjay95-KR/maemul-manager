@@ -108,7 +108,7 @@ export default function PropertyFilter() {
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSearchSubmit();
           }}
-          placeholder="주소 검색"
+          placeholder="주소/메모/특이사항 검색"
           className="flex-1 h-[52px] px-4 rounded-xl border border-border bg-white text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <button
