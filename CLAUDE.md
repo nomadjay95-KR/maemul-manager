@@ -15,6 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Tailwind CSS + shadcn/ui
 - recharts (통계 차트)
 - xlsx (SheetJS) — 엑셀 내보내기
+- @ducanh2912/next-pwa — PWA (Service Worker, 오프라인 지원)
 - Vercel 배포 (main push 시 자동 배포)
 
 ## Commands
@@ -67,8 +68,12 @@ supabase migration list                      # 적용 상태 확인
 - `/components/calendar/` — CalendarView, DaySchedules, ScheduleBadge, DeleteScheduleButton
 - `/components/statistics/` — SummaryCards, ContractChart, RevenueChart, UpcomingBalances
 - `/components/notes/` — NoteLayout, NoteList, NoteDetail, NoteBadge, DeleteNoteButton
-- `/components/ui/` — shadcn 컴포넌트 + Toast, InfoRow, EmptyState
+- `/components/ui/` — shadcn 컴포넌트 + Toast, InfoRow, EmptyState, OfflineBanner, RegisterButton
+- `/components/providers/` — OfflineFetchGuard (오프라인 시 mutation fetch 차단)
+- `/hooks/useOnlineStatus.ts` — 온/오프라인 감지 훅 (useSyncExternalStore)
 - `/types/` — TypeScript 타입 정의 (property.ts, schedule.ts, note.ts, user.ts, sharedLink.ts, document.ts)
+- `/public/` — manifest.json, icons/ (PWA 아이콘), sw.js (빌드 생성)
+- `/scripts/generate-icons.mjs` — PWA 아이콘 생성 스크립트 (@napi-rs/canvas)
 - `/supabase/migrations/` — DB 마이그레이션 SQL
 
 ### Shared Components (리팩터링 추출)
@@ -194,9 +199,31 @@ supabase migration list                      # 적용 상태 확인
 - 성공(초록)/실패(빨강), 2초 자동 사라짐, 화면 상단 중앙
 - 저장/수정/삭제/상태변경 모든 작업에 적용
 
+### PWA (Progressive Web App)
+
+- `@ducanh2912/next-pwa`로 Service Worker 자동 생성 (`next.config.mjs`에서 `withPWA` 래핑)
+- 개발 모드에서 PWA 비활성화 (`disable: process.env.NODE_ENV === "development"`)
+- `public/manifest.json` — 앱 이름 "하나부동산 매물장", standalone, portrait, theme_color #0066FF
+- `public/icons/` — 192x192, 512x512 PNG (파란 배경 + "하나" 텍스트)
+- 아이콘 재생성: `node scripts/generate-icons.mjs` (@napi-rs/canvas devDependency)
+- `app/layout.tsx` — metadata에 manifest, appleWebApp, icons.apple, viewport에 themeColor 설정
+- **캐싱 전략**:
+  - 앱 셸 (JS/CSS): 자동 precache
+  - RSC 페이로드 (`/_next/data/*.json`): NetworkFirst, 1일 만료
+  - API GET 응답 (`/api/*`): NetworkFirst, 1일 만료
+  - Supabase Storage 이미지/서류: **NetworkOnly** (캐싱 제외)
+  - Kakao CDN: NetworkOnly
+- **오프라인 UX**:
+  - `components/ui/OfflineBanner.tsx` — 오프라인 시 화면 최상단 고정 배너 (z-[9998])
+  - `components/providers/OfflineFetchGuard.tsx` — `window.fetch` 래핑, 오프라인 시 non-GET 요청 차단 + toast. 모든 폼이 fetch()를 사용하므로 개별 폼 수정 없이 전체 mutation 차단.
+  - `components/ui/RegisterButton.tsx` — 메인 하단 등록 버튼 (Client Component), 오프라인 시 회색 비활성 + toast
+  - `hooks/useOnlineStatus.ts` — `useSyncExternalStore` 기반, SSR에서는 항상 true
+- **middleware.ts**: `sw.js`, `workbox-*.js`, `manifest.json`, `icons/*` 경로 인증 제외
+- **빌드 생성 파일**: `public/sw.js`, `public/workbox-*.js` → `.gitignore`에 등록 (Vercel 빌드 시 자동 생성)
+
 ### CSP
 
-프로덕션에서 `next.config.mjs`의 `headers()`로 CSP 설정. 카카오/다음 도메인 허용 필요.
+프로덕션에서 `next.config.mjs`의 `headers()`로 CSP 설정. 카카오/다음 도메인 + `worker-src 'self'` (Service Worker) 허용.
 
 ## 핵심 결정사항
 
@@ -218,6 +245,8 @@ supabase migration list                      # 적용 상태 확인
 - Supabase Storage anon 권한: `TO anon` 명시 필요
 - 카카오맵 CSP: frame-src에 `*.kakao.com`, `*.daumcdn.net` 추가
 - Supabase fetch 캐싱: Next.js가 fetch를 패치하여 Supabase 응답을 캐싱함. `createClient`에 `cache: "no-store"` 필수 (lib/supabase.ts에 적용 완료)
+- sharp 설치 실패 (darwin-arm64): `@napi-rs/canvas`로 대체 사용 (아이콘 생성용)
+- PWA Service Worker 등록 실패: middleware.ts matcher에서 `sw.js`, `workbox-*.js` 경로 제외 확인
 
 ## 환경변수
 
