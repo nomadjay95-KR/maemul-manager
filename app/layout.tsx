@@ -1,7 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import Script from "next/script";
 import { ToastProvider } from "@/components/ui/Toast";
+import OfflineBanner from "@/components/ui/OfflineBanner";
+import OfflineFetchGuard from "@/components/providers/OfflineFetchGuard";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -18,6 +20,19 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "부동산 매물장",
   description: "부동산 매물 관리 시스템",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "매물장",
+  },
+  icons: {
+    apple: "/icons/icon-192x192.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0066FF",
 };
 
 export default function RootLayout({
@@ -30,7 +45,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
+        <OfflineBanner />
         <ToastProvider>
+          <OfflineFetchGuard />
           {children}
         </ToastProvider>
         <Script

@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { fetchProperties } from "@/lib/queries/properties";
 import { fetchInquiries } from "@/lib/queries/inquiries";
 import { fetchSchedulesByMonth } from "@/lib/queries/schedules";
@@ -32,6 +31,7 @@ import NoteLayout from "@/components/notes/NoteLayout";
 import UserManagement from "@/components/users/UserManagement";
 import SharedLinkManagement from "@/components/share/SharedLinkManagement";
 import NotificationBanner from "@/components/notifications/NotificationBanner";
+import RegisterButton from "@/components/ui/RegisterButton";
 
 const VALID_PROPERTY_STATUS = ["active", "reserved", "completed"] as const;
 const VALID_PROPERTY_TYPE = ["villa", "shop"] as const;
@@ -167,14 +167,7 @@ export default async function MainPage({ searchParams }: PageProps) {
 
       {/* 하단 고정 등록 버튼 */}
       {showBottomButton && (
-        <div className="fixed bottom-6 left-4 right-4 z-40 flex justify-center">
-          <Link
-            href={bottomButtonHref}
-            className="block w-full max-w-[400px] h-[52px] rounded-xl text-[17px] font-bold bg-primary text-white hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center justify-center"
-          >
-            {bottomButtonLabel}
-          </Link>
-        </div>
+        <RegisterButton href={bottomButtonHref} label={bottomButtonLabel} />
       )}
     </main>
   );
