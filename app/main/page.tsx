@@ -9,6 +9,7 @@ import {
   fetchUpcomingBalances,
   fetchCurrentMonthSummary,
 } from "@/lib/queries/statistics";
+import { fetchNotes } from "@/lib/queries/notes";
 import PropertyFilter from "@/components/properties/PropertyFilter";
 import PropertyCard from "@/components/properties/PropertyCard";
 import InquiryFilter from "@/components/inquiries/InquiryFilter";
@@ -21,6 +22,7 @@ import SummaryCards from "@/components/statistics/SummaryCards";
 import ContractChart from "@/components/statistics/ContractChart";
 import RevenueChart from "@/components/statistics/RevenueChart";
 import UpcomingBalancesView from "@/components/statistics/UpcomingBalances";
+import NoteLayout from "@/components/notes/NoteLayout";
 
 const VALID_PROPERTY_STATUS = ["active", "reserved", "completed"] as const;
 const VALID_PROPERTY_TYPE = ["villa", "shop"] as const;
@@ -42,26 +44,42 @@ interface PageProps {
     orderBy?: string;
     year?: string;
     month?: string;
+    noteId?: string;
   }>;
 }
 
+type TabValue = "properties" | "inquiries" | "calendar" | "statistics" | "notes";
+
+const VALID_TABS: TabValue[] = ["properties", "inquiries", "calendar", "statistics", "notes"];
+
 export default async function MainPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const tab =
-    params.tab === "inquiries"
-      ? "inquiries"
-      : params.tab === "calendar"
-        ? "calendar"
-        : params.tab === "statistics"
-          ? "statistics"
-          : "properties";
+  const tab: TabValue = VALID_TABS.includes(params.tab as TabValue)
+    ? (params.tab as TabValue)
+    : "properties";
 
-  const TAB_TITLES = {
+  const TAB_TITLES: Record<TabValue, string> = {
     properties: "매물장",
     inquiries: "문의장",
     calendar: "캘린더",
     statistics: "통계",
-  } as const;
+    notes: "메모장",
+  };
+
+  // 하단 등록 버튼 표시 여부 및 설정
+  const showBottomButton = tab === "properties" || tab === "inquiries" || tab === "notes";
+  const bottomButtonHref =
+    tab === "properties"
+      ? "/properties/new"
+      : tab === "inquiries"
+        ? "/inquiries/new"
+        : "/notes/new";
+  const bottomButtonLabel =
+    tab === "properties"
+      ? "+ 매물 등록"
+      : tab === "inquiries"
+        ? "+ 문의 등록"
+        : "+ 메모 작성";
 
   return (
     <main className="min-h-screen bg-white px-4 sm:px-6 pt-4 pb-28 max-w-3xl mx-auto">
@@ -95,19 +113,21 @@ export default async function MainPage({ searchParams }: PageProps) {
           />
         ) : tab === "calendar" ? (
           <CalendarTab year={params.year} month={params.month} />
-        ) : (
+        ) : tab === "statistics" ? (
           <StatisticsTab />
+        ) : (
+          <NotesTab noteId={params.noteId} />
         )}
       </div>
 
-      {/* 하단 고정 등록 버튼 (캘린더 탭에서는 숨김) */}
-      {tab !== "calendar" && tab !== "statistics" && (
+      {/* 하단 고정 등록 버튼 */}
+      {showBottomButton && (
         <div className="fixed bottom-6 left-4 right-4 z-40 flex justify-center">
           <Link
-            href={tab === "properties" ? "/properties/new" : "/inquiries/new"}
+            href={bottomButtonHref}
             className="block w-full max-w-[400px] h-[52px] rounded-xl text-[17px] font-bold bg-primary text-white hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center justify-center"
           >
-            {tab === "properties" ? "+ 매물 등록" : "+ 문의 등록"}
+            {bottomButtonLabel}
           </Link>
         </div>
       )}
@@ -219,4 +239,10 @@ async function StatisticsTab() {
       <UpcomingBalancesView balances={balances} />
     </div>
   );
+}
+
+async function NotesTab({ noteId }: { noteId?: string }) {
+  const notes = await fetchNotes();
+
+  return <NoteLayout notes={notes} selectedNoteId={noteId} />;
 }
