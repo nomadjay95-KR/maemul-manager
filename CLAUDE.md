@@ -14,6 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Supabase (DB + Storage)
 - Tailwind CSS + shadcn/ui
 - recharts (통계 차트)
+- xlsx (SheetJS) — 엑셀 내보내기
 - Vercel 배포 (main push 시 자동 배포)
 
 ## Commands
@@ -52,9 +53,10 @@ supabase migration list                      # 적용 상태 확인
 - `/lib/validations/` — Zod 스키마
 - `/lib/format/` — 가격 포맷, 라벨 매핑 유틸
 - `/lib/utils/` — brokerageFee.ts (복비 자동산출 유틸)
+- `/lib/export/` — xlsx.ts (매물/문의 엑셀 내보내기)
 - `/lib/constants/` — filterRanges.ts (매물 필터 옵션 상수)
 - `/components/forms/` — PropertyForm, InquiryForm, ScheduleForm, NoteForm, ImageUpload, AddressSearch, Field
-- `/components/properties/` — PropertyFilter, FilterPanel, PropertyCard, PropertyDetail, StatusChanger, ShareButtons, DeleteButton, LockButton
+- `/components/properties/` — PropertyFilter, FilterPanel, PropertyCard, PropertyDetail, StatusChanger, ShareButtons, DeleteButton, LockButton, ExportButton
 - `/components/calendar/` — CalendarView, DaySchedules, ScheduleBadge, DeleteScheduleButton
 - `/components/statistics/` — SummaryCards, ContractChart, RevenueChart, UpcomingBalances
 - `/components/notes/` — NoteLayout, NoteList, NoteDetail, NoteBadge, DeleteNoteButton
@@ -96,6 +98,16 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
   - 패널 하단: "초기화" (모든 필터 해제) + "적용 (N)" (URL searchParams 업데이트)
 - 문의: 이름/연락처 or ilike 검색, 문의일순/최신순 정렬
 - URL searchParams로 서버 사이드 처리, `parseEnum()`으로 런타임 검증
+
+### 엑셀 내보내기
+
+- 매물장/문의장 탭 필터 행에 "엑셀" 버튼 배치
+- `lib/export/xlsx.ts` — 클라이언트 사이드 xlsx 생성 (`exportPropertiesToXlsx`, `exportInquiriesToXlsx`)
+- 현재 적용된 필터/검색 결과를 그대로 내보냄 (서버에서 조회한 데이터를 props로 전달)
+- 매물 18개 컬럼, 문의 10개 컬럼 (한글 헤더, 만원 단위 가격, 한글 라벨 변환)
+- 파일명: `매물목록_YYYYMMDD.xlsx` / `문의목록_YYYYMMDD.xlsx`
+- `components/properties/ExportButton.tsx`, `components/inquiries/ExportButton.tsx` — Client Component
+- PropertyFilter/InquiryFilter에 `exportButton` prop (ReactNode)으로 주입
 
 ### 탭 구조
 
