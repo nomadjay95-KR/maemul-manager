@@ -42,7 +42,9 @@ npm run lint     # ESLint
 - `/lib/validations/` — Zod 스키마
 - `/lib/format/` — 가격 포맷, 라벨 매핑 유틸
 - `/lib/utils/` — brokerageFee.ts (복비 자동산출 유틸)
+- `/lib/constants/` — filterRanges.ts (매물 필터 옵션 상수)
 - `/components/forms/` — PropertyForm, InquiryForm, ScheduleForm, NoteForm, ImageUpload, AddressSearch, Field
+- `/components/properties/` — PropertyFilter, FilterPanel, PropertyCard, LockButton, StatusButtons
 - `/components/calendar/` — CalendarView, DaySchedules, ScheduleBadge, DeleteScheduleButton
 - `/components/statistics/` — SummaryCards, ContractChart, RevenueChart, UpcomingBalances
 - `/components/notes/` — NoteLayout, NoteList, NoteDetail, NoteBadge, DeleteNoteButton
@@ -72,9 +74,16 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 - **카카오톡 공유**: `layout.tsx`에서 `kakao.min.js` 로드. `ShareButtons.tsx`에서 `Kakao.Share.sendDefault` 호출. 카카오 개발자센터에서 플랫폼 도메인 등록 필수.
 - **Supabase Storage**: `property-photos` 버킷 (public). 이미지 업로드 시 Buffer 변환 필요.
 
-### 검색/정렬
+### 검색/정렬/필터
 
 - 매물: 주소 ilike 검색, 보증금순/상태순/최신순 정렬
+- 매물 상세 필터: "필터" 버튼 → 하단 슬라이드 패널 (7개 조건)
+  - 거래유형(월세/전세/매매), 보증금 구간, 월세 구간, 방 개수, 입주상태(공실/입주중), 연식, 층수(지상/지하)
+  - `lib/constants/filterRanges.ts` — 7개 필터 옵션 상수 (구간별 min/max 포함)
+  - `components/properties/FilterPanel.tsx` — 하단 슬라이드 패널 (Client Component). 내부 임시 state → "적용" 시 URL 반영.
+  - `components/properties/PropertyFilter.tsx` — "필터" 버튼 + 적용 개수 뱃지 ("필터 3")
+  - `lib/queries/properties.ts` — `PropertyFilters` 인터페이스에 7개 필터 키, `applyRangeFilter()` 헬퍼로 구간 쿼리
+  - 패널 하단: "초기화" (모든 필터 해제) + "적용 (N)" (URL searchParams 업데이트)
 - 문의: 이름/연락처 or ilike 검색, 문의일순/최신순 정렬
 - URL searchParams로 서버 사이드 처리, `parseEnum()`으로 런타임 검증
 
