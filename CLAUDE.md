@@ -44,7 +44,7 @@ supabase migration list                      # 적용 상태 확인
 - **Server Components** → `/lib/queries/`로 데이터 조회
 - **Server Actions** (`/lib/actions/`) → 생성/수정/삭제 후 `revalidatePath`
 - **API Routes** (`/app/api/`) → FormData 파일 업로드, 사용자 인증
-- **Supabase** 직접 클라이언트 사용 (ORM 없음), `/lib/supabase.ts` 싱글턴
+- **Supabase** 직접 클라이언트 사용 (ORM 없음), `/lib/supabase.ts` 싱글턴, `cache: "no-store"` 설정 (Next.js fetch 캐싱 방지)
 
 ### Key Directories
 
@@ -187,6 +187,7 @@ supabase migration list                      # 적용 상태 확인
 - npm 캐시 충돌 시: `--cache /tmp/npm-cache` 우회
 - Supabase Storage anon 권한: `TO anon` 명시 필요
 - 카카오맵 CSP: frame-src에 `*.kakao.com`, `*.daumcdn.net` 추가
+- Supabase fetch 캐싱: Next.js가 fetch를 패치하여 Supabase 응답을 캐싱함. `createClient`에 `cache: "no-store"` 필수 (lib/supabase.ts에 적용 완료)
 
 ## 환경변수
 
