@@ -159,6 +159,13 @@ export async function updatePropertyStatus(
 ): Promise<boolean> {
   const supabase = getSupabase();
 
+  // 현재 상태 조회 (이력 기록용)
+  const { data: current } = await supabase
+    .from("properties")
+    .select("status")
+    .eq("id", id)
+    .single();
+
   const { error } = await supabase
     .from("properties")
     .update({ status })
@@ -169,8 +176,44 @@ export async function updatePropertyStatus(
     return false;
   }
 
+  // 상태 변경 이력 기록
+  if (current && current.status !== status) {
+    await supabase.from("property_status_history").insert({
+      property_id: id,
+      from_status: current.status,
+      to_status: status,
+    });
+  }
+
   revalidatePath("/main");
   revalidatePath(`/properties/${id}`);
 
   return true;
+}
+
+export interface StatusHistoryEntry {
+  id: string;
+  property_id: string;
+  from_status: string | null;
+  to_status: string;
+  changed_at: string;
+}
+
+export async function fetchStatusHistory(
+  propertyId: string
+): Promise<StatusHistoryEntry[]> {
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase
+    .from("property_status_history")
+    .select("*")
+    .eq("property_id", propertyId)
+    .order("changed_at", { ascending: true });
+
+  if (error) {
+    console.error("Failed to fetch status history:", error.message);
+    return [];
+  }
+
+  return data as StatusHistoryEntry[];
 }
