@@ -57,7 +57,9 @@ supabase migration list                      # 적용 상태 확인
 - `/lib/constants/` — filterRanges.ts (매물 필터 옵션 상수)
 - `/components/forms/` — PropertyForm, InquiryForm, ScheduleForm, NoteForm, ImageUpload, AddressSearch, Field
 - `/lib/auth.ts` — 서버 컴포넌트용 쿠키 파싱 유틸 (`getAuthUser()`)
-- `/components/properties/` — PropertyFilter, FilterPanel, PropertyCard, PropertyDetail, StatusChanger, ShareButtons, DeleteButton, LockButton, ExportButton
+- `/components/properties/` — PropertyFilter, FilterPanel, PropertyCard, PropertyDetail, StatusChanger, StatusBadge, AddressMap, ShareButtons, DeleteButton, LockButton, ExportButton
+- `/components/inquiries/` — InquiryCard, InquiryFilter, InquiryStatusChanger, DeleteInquiryButton, ExportButton
+- `/components/notifications/` — NotificationBanner (인앱 다가오는 일정 알림)
 - `/components/users/` — UserManagement, UserActions (admin 전용 사용자 관리)
 - `/components/lock/` — PinPad, UserSelect, LoginFlow, SignupForm
 - `/components/calendar/` — CalendarView, DaySchedules, ScheduleBadge, DeleteScheduleButton
@@ -118,6 +120,12 @@ supabase migration list                      # 적용 상태 확인
 - 더보기 드롭다운: 통계 / 메모장 / 사용자 관리(admin만)
 - `components/layout/TabNav.tsx` — MAIN_TABS(3개) + 동적 moreTabs 구조. role prop으로 admin일 때 "사용자 관리" 추가. 더보기 클릭 시 드롭다운 표시, 바깥 클릭 시 닫힘.
 - 더보기 탭 선택 시 "더보기" 텍스트에 파란색 활성 표시
+
+### 인앱 알림 배너
+
+- 메인 페이지(`app/main/page.tsx`) 탭 네비 아래에 배치, 다가오는 일정이 있을 때만 표시
+- `lib/queries/notifications.ts` — `fetchUpcomingEvents()`: 오늘~7일 이내 schedules 조회 (모든 카테고리), 날짜·시간순 정렬, 연결 매물 주소 포함
+- `components/notifications/NotificationBanner.tsx` — 서버 컴포넌트. 오늘 일정(빨강 배경 + 좌측 빨강 보더)과 이번 주 일정(흰 배경) 구분 표시. 각 행 클릭 시 `/calendar/{id}/edit`로 이동. 일정 0건이면 배너 숨김.
 
 ### 캘린더 (거래 일정)
 - `components/calendar/CalendarView.tsx` — 월간 달력 그리드 (Client Component). 월 이동 시 `/api/schedules?year=&month=`로 클라이언트 fetch (전체 새로고침 없음).
