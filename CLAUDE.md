@@ -48,7 +48,7 @@ supabase migration list                      # 적용 상태 확인
 
 ### Key Directories
 
-- `/lib/actions/` — Server Actions (property, inquiry, schedule, note, user, sharedLink CRUD)
+- `/lib/actions/` — Server Actions (property, inquiry, schedule, note, user, sharedLink, document CRUD)
 - `/lib/queries/` — 서버 데이터 조회 함수 (검색/정렬/통계 지원)
 - `/lib/validations/` — Zod 스키마
 - `/lib/format/` — 가격 포맷, 라벨 매핑 유틸
@@ -59,6 +59,7 @@ supabase migration list                      # 적용 상태 확인
 - `/lib/auth.ts` — 서버 컴포넌트용 쿠키 파싱 유틸 (`getAuthUser()`)
 - `/components/properties/` — PropertyFilter, FilterPanel, PropertyCard, PropertyListWithSelect, PropertyDetail, StatusChanger, StatusBadge, AddressMap, ShareButtons, DeleteButton, LockButton, ExportButton
 - `/components/share/` — CreateShareLinkButton, SharedLinkManagement, PublicPropertyView, PublicPropertyCard (외부 공유)
+- `/components/documents/` — DocumentUpload, DocumentList (매물별 서류 첨부)
 - `/components/inquiries/` — InquiryCard, InquiryFilter, InquiryStatusChanger, DeleteInquiryButton, ExportButton
 - `/components/notifications/` — NotificationBanner (인앱 다가오는 일정 알림)
 - `/components/users/` — UserManagement, UserActions (admin 전용 사용자 관리)
@@ -67,7 +68,7 @@ supabase migration list                      # 적용 상태 확인
 - `/components/statistics/` — SummaryCards, ContractChart, RevenueChart, UpcomingBalances
 - `/components/notes/` — NoteLayout, NoteList, NoteDetail, NoteBadge, DeleteNoteButton
 - `/components/ui/` — shadcn 컴포넌트 + Toast, InfoRow, EmptyState
-- `/types/` — TypeScript 타입 정의 (property.ts, schedule.ts, note.ts, user.ts, sharedLink.ts)
+- `/types/` — TypeScript 타입 정의 (property.ts, schedule.ts, note.ts, user.ts, sharedLink.ts, document.ts)
 - `/supabase/migrations/` — DB 마이그레이션 SQL
 
 ### Shared Components (리팩터링 추출)
@@ -84,13 +85,13 @@ supabase migration list                      # 적용 상태 확인
 
 ### DB Schema
 
-단일 `properties` 테이블에 `type` 컬럼(`villa`/`shop`)으로 구분. 가격은 만원 단위 정수. `property_images` 테이블로 사진 관리 (최대 10장). `inquiries` 테이블로 문의 관리. `schedules` 테이블로 거래 일정 관리 (property_id FK, ON DELETE SET NULL, transaction_amount/fee 컬럼으로 거래금액·복비 저장). `notes` 테이블로 메모 관리 (property_id, inquiry_id FK, ON DELETE SET NULL, updated_at 자동 갱신 트리거). `property_status_history` 테이블로 매물 상태 변경 이력 관리 (property_id FK, ON DELETE CASCADE, from_status/to_status/changed_at). `users` 테이블로 사용자 관리 (name UNIQUE, pin, role admin/member). `shared_links` 테이블로 외부 공유 링크 관리 (token UNIQUE, property_ids uuid[], is_active, view_count). RLS 활성화, anon 역할 허용.
+단일 `properties` 테이블에 `type` 컬럼(`villa`/`shop`)으로 구분. 가격은 만원 단위 정수. `property_images` 테이블로 사진 관리 (최대 10장). `property_documents` 테이블로 서류 관리 (property_id FK, ON DELETE CASCADE, doc_type: contract/registry/building/etc). `inquiries` 테이블로 문의 관리. `schedules` 테이블로 거래 일정 관리 (property_id FK, ON DELETE SET NULL, transaction_amount/fee 컬럼으로 거래금액·복비 저장). `notes` 테이블로 메모 관리 (property_id, inquiry_id FK, ON DELETE SET NULL, updated_at 자동 갱신 트리거). `property_status_history` 테이블로 매물 상태 변경 이력 관리 (property_id FK, ON DELETE CASCADE, from_status/to_status/changed_at). `users` 테이블로 사용자 관리 (name UNIQUE, pin, role admin/member). `shared_links` 테이블로 외부 공유 링크 관리 (token UNIQUE, property_ids uuid[], is_active, view_count). RLS 활성화, anon 역할 허용.
 
 ### External APIs
 
 - **카카오 주소/지도**: `NEXT_PUBLIC_KAKAO_JS_KEY` 환경변수. SDK는 동적 로딩 (`ensureKakaoMaps()` 싱글턴, `autoload=false` + `kakao.maps.load()`). `AddressSearch.tsx`에서 다음 우편번호 + 카카오맵 연동. `AddressMap.tsx`에서 상세 페이지 읽기 전용 지도 표시.
 - **카카오톡 공유**: `layout.tsx`에서 `kakao.min.js` 로드. `ShareButtons.tsx`에서 `Kakao.Share.sendDefault` 호출. 카카오 개발자센터에서 플랫폼 도메인 등록 필수.
-- **Supabase Storage**: `property-photos` 버킷 (public). 이미지 업로드 시 Buffer 변환 필요.
+- **Supabase Storage**: `property-photos` 버킷 (사진), `property-documents` 버킷 (서류). 둘 다 public, anon 권한. 업로드 시 Buffer 변환 필요.
 
 ### 검색/정렬/필터
 
@@ -168,6 +169,7 @@ supabase migration list                      # 적용 상태 확인
 - 전화 연결: 집주인 전화번호 `tel:` 링크 버튼 (모바일 원터치 발신)
 - 내부 공유: 카카오톡 공유 + 링크 복사
 - 고객 공유: 외부 열람 링크 생성 (비공개 필드 제외)
+- 첨부 서류: `DocumentSection` — 서류 목록(`DocumentList`) + 업로드(`DocumentUpload`). 종류별 배지(계약서/등기부등본/건축물대장/기타), 다운로드, 삭제. 사진과 별도 Storage 버킷(`property-documents`). 고객 열람 페이지에는 미노출(내부용).
 
 ### 고객 열람 페이지 (외부 공유)
 
@@ -200,9 +202,10 @@ supabase migration list                      # 적용 상태 확인
 
 - 빌라/상가 단일 테이블 (type 컬럼 구분)
 - RLS: anon 전체 허용 (앱 레벨 사용자 인증)
-- Storage: property-photos 버킷 (anon INSERT/SELECT/DELETE)
+- Storage: property-photos(사진), property-documents(서류) 버킷 (anon INSERT/SELECT/DELETE)
 - 현관 비밀번호: 평문 저장
 - 매물-문의 FK 없음 (쿼리 매칭: 문의→매물 `fetchMatchingProperties`, 매물→문의 `fetchMatchingInquiries`)
+- 매물-서류 FK 있음 (property_documents.property_id → properties.id, ON DELETE CASCADE)
 - 매물-상태이력 FK 있음 (property_status_history.property_id → properties.id, ON DELETE CASCADE)
 - 매물-일정 FK 있음 (schedules.property_id → properties.id, ON DELETE SET NULL)
 - 메모-매물/문의 FK 있음 (notes.property_id → properties.id, notes.inquiry_id → inquiries.id, ON DELETE SET NULL)

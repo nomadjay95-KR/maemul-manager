@@ -1,7 +1,7 @@
 # 하나부동산 매물장
 
 공인중개사를 위한 모바일 최적화 매물 관리 웹앱.
-다중 사용자 PIN 인증, 매물/문의 CRUD, 사진 관리, 주소 검색, 카카오톡 공유, 고객 외부 공유, 매물-문의 조건 매칭, 거래 일정 캘린더, 통계 대시보드, 메모장, 사용자 관리 기능을 제공합니다.
+다중 사용자 PIN 인증, 매물/문의 CRUD, 사진 관리, 서류 첨부, 주소 검색, 카카오톡 공유, 고객 외부 공유, 매물-문의 조건 매칭, 거래 일정 캘린더, 통계 대시보드, 메모장, 사용자 관리 기능을 제공합니다.
 
 **URL**: https://maemul-manager.vercel.app
 
@@ -27,6 +27,8 @@
 - 카카오톡 매물 공유 + 링크 복사 (내부 공유)
 - 고객 외부 공유 링크 생성 (단일/묶음, 비공개 필드 자동 제외)
 - 매물 목록 선택 모드 → 묶음 공유 링크 생성
+- 서류 첨부 (계약서/등기부등본/건축물대장/기타, PDF·이미지 지원)
+- 서류 다운로드·삭제, 종류별 색상 배지 표시
 - 매물 목록 엑셀(xlsx) 내보내기 (필터/검색 결과 반영)
 
 ### 문의 관리
@@ -130,7 +132,7 @@ npm run dev
 
 ### Supabase 설정
 
-- Storage에 `property-photos` 버킷 생성 (public 접근 허용)
+- Storage에 `property-photos` (사진), `property-documents` (서류) 버킷 생성 (public 접근 허용)
 - RLS 정책에 `TO anon` INSERT/SELECT/DELETE 허용
 - DB 테이블은 `supabase/migrations/` 폴더의 SQL 파일 참조
 - Migration 적용: `supabase link` 후 `supabase db push`
