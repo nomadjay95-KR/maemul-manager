@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -10,21 +10,30 @@ const MAIN_TABS = [
   { value: "calendar", label: "캘린더" },
 ] as const;
 
-const MORE_TABS = [
-  { value: "statistics", label: "통계" },
-  { value: "notes", label: "메모장" },
-] as const;
+interface Props {
+  role?: "admin" | "member";
+}
 
-const ALL_MORE_VALUES = MORE_TABS.map((t) => t.value) as string[];
-
-export default function TabNav() {
+export default function TabNav({ role }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") ?? "properties";
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
-  const isMoreTab = ALL_MORE_VALUES.includes(currentTab);
+  const moreTabs = useMemo(() => {
+    const tabs = [
+      { value: "statistics", label: "통계" },
+      { value: "notes", label: "메모장" },
+    ];
+    if (role === "admin") {
+      tabs.push({ value: "users", label: "사용자 관리" });
+    }
+    return tabs;
+  }, [role]);
+
+  const allMoreValues = moreTabs.map((t) => t.value);
+  const isMoreTab = allMoreValues.includes(currentTab);
 
   // 바깥 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -81,7 +90,7 @@ export default function TabNav() {
 
         {moreOpen && (
           <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-xl shadow-lg z-50 min-w-[140px] overflow-hidden">
-            {MORE_TABS.map((tab) => (
+            {moreTabs.map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => {

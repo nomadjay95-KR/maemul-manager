@@ -43,12 +43,12 @@ supabase migration list                      # 적용 상태 확인
 
 - **Server Components** → `/lib/queries/`로 데이터 조회
 - **Server Actions** (`/lib/actions/`) → 생성/수정/삭제 후 `revalidatePath`
-- **API Routes** (`/app/api/`) → FormData 파일 업로드, PIN 인증
+- **API Routes** (`/app/api/`) → FormData 파일 업로드, 사용자 인증
 - **Supabase** 직접 클라이언트 사용 (ORM 없음), `/lib/supabase.ts` 싱글턴
 
 ### Key Directories
 
-- `/lib/actions/` — Server Actions (property, inquiry, schedule, note CRUD)
+- `/lib/actions/` — Server Actions (property, inquiry, schedule, note, user CRUD)
 - `/lib/queries/` — 서버 데이터 조회 함수 (검색/정렬/통계 지원)
 - `/lib/validations/` — Zod 스키마
 - `/lib/format/` — 가격 포맷, 라벨 매핑 유틸
@@ -56,12 +56,15 @@ supabase migration list                      # 적용 상태 확인
 - `/lib/export/` — xlsx.ts (매물/문의 엑셀 내보내기)
 - `/lib/constants/` — filterRanges.ts (매물 필터 옵션 상수)
 - `/components/forms/` — PropertyForm, InquiryForm, ScheduleForm, NoteForm, ImageUpload, AddressSearch, Field
+- `/lib/auth.ts` — 서버 컴포넌트용 쿠키 파싱 유틸 (`getAuthUser()`)
 - `/components/properties/` — PropertyFilter, FilterPanel, PropertyCard, PropertyDetail, StatusChanger, ShareButtons, DeleteButton, LockButton, ExportButton
+- `/components/users/` — UserManagement, UserActions (admin 전용 사용자 관리)
+- `/components/lock/` — PinPad, UserSelect, LoginFlow, SignupForm
 - `/components/calendar/` — CalendarView, DaySchedules, ScheduleBadge, DeleteScheduleButton
 - `/components/statistics/` — SummaryCards, ContractChart, RevenueChart, UpcomingBalances
 - `/components/notes/` — NoteLayout, NoteList, NoteDetail, NoteBadge, DeleteNoteButton
 - `/components/ui/` — shadcn 컴포넌트 + Toast, InfoRow, EmptyState
-- `/types/` — TypeScript 타입 정의 (property.ts, schedule.ts, note.ts)
+- `/types/` — TypeScript 타입 정의 (property.ts, schedule.ts, note.ts, user.ts)
 - `/supabase/migrations/` — DB 마이그레이션 SQL
 
 ### Shared Components (리팩터링 추출)
@@ -74,11 +77,11 @@ supabase migration list                      # 적용 상태 확인
 
 ### Auth
 
-PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware.ts`에서 쿠키(`app_unlocked`) 검사. Supabase anon key로 직접 접근.
+다중 사용자 PIN 인증. `users` 테이블(name UNIQUE, pin, role admin/member). 로그인 시 이름 선택 → PIN 4자리 입력 → DB 검증 → `auth_user` httpOnly JSON 쿠키(`{id,name,role}`) 설정. `middleware.ts`에서 `auth_user` 쿠키 검사. 사용자 0명이면 /signup으로 자동 리다이렉트. 첫 가입자 자동 admin. admin만 사용자 관리(역할 변경/PIN 재설정/삭제) 가능. `lib/auth.ts`의 `getAuthUser()`로 서버 컴포넌트에서 현재 사용자 읽기. `hooks/useAuth.ts`로 클라이언트 사이드 로그아웃.
 
 ### DB Schema
 
-단일 `properties` 테이블에 `type` 컬럼(`villa`/`shop`)으로 구분. 가격은 만원 단위 정수. `property_images` 테이블로 사진 관리 (최대 10장). `inquiries` 테이블로 문의 관리. `schedules` 테이블로 거래 일정 관리 (property_id FK, ON DELETE SET NULL, transaction_amount/fee 컬럼으로 거래금액·복비 저장). `notes` 테이블로 메모 관리 (property_id, inquiry_id FK, ON DELETE SET NULL, updated_at 자동 갱신 트리거). `property_status_history` 테이블로 매물 상태 변경 이력 관리 (property_id FK, ON DELETE CASCADE, from_status/to_status/changed_at). RLS 활성화, anon 역할 허용.
+단일 `properties` 테이블에 `type` 컬럼(`villa`/`shop`)으로 구분. 가격은 만원 단위 정수. `property_images` 테이블로 사진 관리 (최대 10장). `inquiries` 테이블로 문의 관리. `schedules` 테이블로 거래 일정 관리 (property_id FK, ON DELETE SET NULL, transaction_amount/fee 컬럼으로 거래금액·복비 저장). `notes` 테이블로 메모 관리 (property_id, inquiry_id FK, ON DELETE SET NULL, updated_at 자동 갱신 트리거). `property_status_history` 테이블로 매물 상태 변경 이력 관리 (property_id FK, ON DELETE CASCADE, from_status/to_status/changed_at). `users` 테이블로 사용자 관리 (name UNIQUE, pin, role admin/member). RLS 활성화, anon 역할 허용.
 
 ### External APIs
 
@@ -112,8 +115,8 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 ### 탭 구조
 
 - 메인 탭: 매물장 / 문의장 / 캘린더 (3개)
-- 더보기 드롭다운: 통계 / 메모장
-- `components/layout/TabNav.tsx` — MAIN_TABS(3개) + MORE_TABS(2개) 구조. 더보기 클릭 시 드롭다운 표시, 바깥 클릭 시 닫힘.
+- 더보기 드롭다운: 통계 / 메모장 / 사용자 관리(admin만)
+- `components/layout/TabNav.tsx` — MAIN_TABS(3개) + 동적 moreTabs 구조. role prop으로 admin일 때 "사용자 관리" 추가. 더보기 클릭 시 드롭다운 표시, 바깥 클릭 시 닫힘.
 - 더보기 탭 선택 시 "더보기" 텍스트에 파란색 활성 표시
 
 ### 캘린더 (거래 일정)
@@ -169,7 +172,7 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 ## 핵심 결정사항
 
 - 빌라/상가 단일 테이블 (type 컬럼 구분)
-- RLS: anon 전체 허용 (앱 레벨 PIN 잠금)
+- RLS: anon 전체 허용 (앱 레벨 사용자 인증)
 - Storage: property-photos 버킷 (anon INSERT/SELECT/DELETE)
 - 현관 비밀번호: 평문 저장
 - 매물-문의 FK 없음 (쿼리 매칭: 문의→매물 `fetchMatchingProperties`, 매물→문의 `fetchMatchingInquiries`)
@@ -189,7 +192,6 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `APP_PIN`
 - `NEXT_PUBLIC_KAKAO_JS_KEY`
 
 ## Conventions

@@ -1,15 +1,19 @@
 # 하나부동산 매물장
 
 공인중개사를 위한 모바일 최적화 매물 관리 웹앱.
-PIN 잠금, 매물/문의 CRUD, 사진 관리, 주소 검색, 카카오톡 공유, 매물-문의 조건 매칭, 거래 일정 캘린더, 통계 대시보드, 메모장 기능을 제공합니다.
+다중 사용자 PIN 인증, 매물/문의 CRUD, 사진 관리, 주소 검색, 카카오톡 공유, 매물-문의 조건 매칭, 거래 일정 캘린더, 통계 대시보드, 메모장, 사용자 관리 기능을 제공합니다.
 
 **URL**: https://maemul-manager.vercel.app
 
 ## 완성된 기능
 
-### 인증
-- PIN 4자리 잠금 화면 (숫자 키패드, 진동 피드백)
+### 인증 / 사용자 관리
+- 다중 사용자 PIN 인증 (이름 선택 → PIN 4자리 입력)
+- 사용자 가입 (이름 + PIN 설정, 첫 가입자 자동 admin)
+- admin/member 역할 구분, 데이터 전원 공유
+- admin: 사용자 관리 (역할 변경, PIN 재설정, 삭제)
 - httpOnly 쿠키 세션, 미인증 시 `/lock`으로 리다이렉트
+- 사용자 0명 시 자동 가입 화면 유도
 
 ### 매물 관리
 - 빌라/상가 매물 등록·수정·삭제
@@ -82,7 +86,6 @@ PIN 잠금, 매물/문의 CRUD, 사진 관리, 주소 검색, 카카오톡 공�
 |--------|------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public 키 |
-| `APP_PIN` | 앱 잠금 해제 PIN (기본: `1234`) |
 | `NEXT_PUBLIC_KAKAO_JS_KEY` | 카카오 JavaScript 앱 키 |
 
 ## 로컬 실행
@@ -99,12 +102,12 @@ cp .env.example .env.local
 npm run dev
 ```
 
-`http://localhost:3000`에서 접속. 기본 PIN은 `1234`.
+`http://localhost:3000`에서 접속. 최초 접속 시 사용자 등록 화면으로 이동 (첫 가입자 = admin).
 
 ## Vercel 배포
 
 1. [Vercel](https://vercel.com)에서 GitHub 저장소 Import
-2. Environment Variables에 위 4개 환경변수 추가
+2. Environment Variables에 위 3개 환경변수 추가
 3. Deploy 클릭 → 이후 `main` push 시 자동 배포
 
 ### Supabase 설정

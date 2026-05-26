@@ -1,11 +1,22 @@
-import PinPad from "@/components/lock/PinPad";
+import { redirect } from "next/navigation";
+import { fetchUsers, fetchUserCount } from "@/lib/queries/users";
+import LoginFlow from "@/components/lock/LoginFlow";
 
-export default function LockPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LockPage() {
+  const userCount = await fetchUserCount();
+
+  if (userCount === 0) {
+    redirect("/signup");
+  }
+
+  const users = await fetchUsers();
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
-      <div className="flex flex-col items-center gap-6">
-        <h1 className="text-xl font-semibold text-foreground">비밀번호 입력</h1>
-        <PinPad />
+      <div className="flex flex-col items-center gap-6 w-full max-w-sm">
+        <LoginFlow users={users} />
       </div>
     </main>
   );

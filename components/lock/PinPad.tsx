@@ -4,7 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-export default function PinPad() {
+interface Props {
+  userId: string;
+  userName: string;
+  onBack: () => void;
+}
+
+export default function PinPad({ userId, userName, onBack }: Props) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -30,18 +36,19 @@ export default function PinPad() {
   const verifyPin = async (inputPin: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/verify-pin", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin: inputPin }),
+        body: JSON.stringify({ userId, pin: inputPin }),
       });
 
       if (res.ok) {
-        sessionStorage.setItem("app_unlocked", "true");
+        const data = await res.json();
+        sessionStorage.setItem("auth_user", JSON.stringify(data.user));
         router.push("/main");
         router.refresh();
       } else {
-        setError("비밀번호가 틀렸습니다.");
+        setError("PIN이 일치하지 않습니다.");
         setPin("");
         if (navigator.vibrate) {
           navigator.vibrate(200);
@@ -58,9 +65,22 @@ export default function PinPad() {
   const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"];
 
   return (
-    <div className="flex flex-col items-center gap-10">
+    <div className="flex flex-col items-center gap-6">
+      {/* 뒤로가기 + 사용자 이름 */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onBack}
+          className="text-xl text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ←
+        </button>
+        <h1 className="text-xl font-semibold text-foreground">
+          {userName}님, PIN을 입력해주세요
+        </h1>
+      </div>
+
       {/* PIN 표시 */}
-      <div className="flex gap-5">
+      <div className="flex gap-5 mt-4">
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}

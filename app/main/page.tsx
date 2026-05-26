@@ -10,6 +10,8 @@ import {
   fetchCurrentMonthSummary,
 } from "@/lib/queries/statistics";
 import { fetchNotes } from "@/lib/queries/notes";
+import { fetchUsersForAdmin } from "@/lib/queries/users";
+import { getAuthUser } from "@/lib/auth";
 import PropertyFilter from "@/components/properties/PropertyFilter";
 import PropertyCard from "@/components/properties/PropertyCard";
 import InquiryFilter from "@/components/inquiries/InquiryFilter";
@@ -25,6 +27,7 @@ import ContractChart from "@/components/statistics/ContractChart";
 import RevenueChart from "@/components/statistics/RevenueChart";
 import UpcomingBalancesView from "@/components/statistics/UpcomingBalances";
 import NoteLayout from "@/components/notes/NoteLayout";
+import UserManagement from "@/components/users/UserManagement";
 
 const VALID_PROPERTY_STATUS = ["active", "reserved", "completed"] as const;
 const VALID_PROPERTY_TYPE = ["villa", "shop"] as const;
@@ -57,12 +60,14 @@ interface PageProps {
   }>;
 }
 
-type TabValue = "properties" | "inquiries" | "calendar" | "statistics" | "notes";
+type TabValue = "properties" | "inquiries" | "calendar" | "statistics" | "notes" | "users";
 
-const VALID_TABS: TabValue[] = ["properties", "inquiries", "calendar", "statistics", "notes"];
+const VALID_TABS: TabValue[] = ["properties", "inquiries", "calendar", "statistics", "notes", "users"];
 
 export default async function MainPage({ searchParams }: PageProps) {
   const params = await searchParams;
+  const authUser = await getAuthUser();
+
   const tab: TabValue = VALID_TABS.includes(params.tab as TabValue)
     ? (params.tab as TabValue)
     : "properties";
@@ -73,6 +78,7 @@ export default async function MainPage({ searchParams }: PageProps) {
     calendar: "캘린더",
     statistics: "통계",
     notes: "메모장",
+    users: "사용자 관리",
   };
 
   // 하단 등록 버튼 표시 여부 및 설정
@@ -97,12 +103,19 @@ export default async function MainPage({ searchParams }: PageProps) {
         <h1 className="text-xl font-bold text-foreground">
           {TAB_TITLES[tab]}
         </h1>
-        <LockButton />
+        <div className="flex items-center gap-2">
+          {authUser && (
+            <span className="text-base text-muted-foreground font-medium">
+              {authUser.name}
+            </span>
+          )}
+          <LockButton />
+        </div>
       </div>
 
       {/* 탭 */}
       <Suspense fallback={null}>
-        <TabNav />
+        <TabNav role={authUser?.role} />
       </Suspense>
 
       {/* 탭 콘텐츠 */}
@@ -131,6 +144,8 @@ export default async function MainPage({ searchParams }: PageProps) {
           <CalendarTab year={params.year} month={params.month} />
         ) : tab === "statistics" ? (
           <StatisticsTab />
+        ) : tab === "users" ? (
+          <UsersTab currentUserId={authUser?.id} />
         ) : (
           <NotesTab noteId={params.noteId} />
         )}
@@ -282,4 +297,10 @@ async function NotesTab({ noteId }: { noteId?: string }) {
   const notes = await fetchNotes();
 
   return <NoteLayout notes={notes} selectedNoteId={noteId} />;
+}
+
+async function UsersTab({ currentUserId }: { currentUserId?: string }) {
+  const users = await fetchUsersForAdmin();
+
+  return <UserManagement users={users} currentUserId={currentUserId} />;
 }
