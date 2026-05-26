@@ -154,7 +154,7 @@ export async function deleteProperty(
 ): Promise<{ success: true } | { error: string }> {
   const supabase = getSupabase();
 
-  // Storage 폴더 삭제
+  // Storage 폴더 삭제 (사진)
   const { data: files } = await supabase.storage
     .from("property-photos")
     .list(id);
@@ -164,7 +164,17 @@ export async function deleteProperty(
     await supabase.storage.from("property-photos").remove(paths);
   }
 
-  // properties 삭제 (property_images는 CASCADE)
+  // Storage 폴더 삭제 (서류)
+  const { data: docFiles } = await supabase.storage
+    .from("property-documents")
+    .list(id);
+
+  if (docFiles && docFiles.length > 0) {
+    const docPaths = docFiles.map((f) => `${id}/${f.name}`);
+    await supabase.storage.from("property-documents").remove(docPaths);
+  }
+
+  // properties 삭제 (property_images, property_documents는 CASCADE)
   const { error } = await supabase.from("properties").delete().eq("id", id);
 
   if (error) {

@@ -2,12 +2,15 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { fetchPropertyById, fetchStatusHistory } from "@/lib/queries/properties";
 import { fetchMatchingInquiries } from "@/lib/queries/inquiries";
+import { fetchDocumentsByProperty } from "@/lib/queries/documents";
 import { DEAL_LABEL, formatPrice } from "@/lib/format/property";
 import PropertyDetail from "@/components/properties/PropertyDetail";
 import StatusChanger from "@/components/properties/StatusChanger";
 import DeleteButton from "@/components/properties/DeleteButton";
 import ShareButtons from "@/components/properties/ShareButtons";
 import CreateShareLinkButton from "@/components/share/CreateShareLinkButton";
+import DocumentList from "@/components/documents/DocumentList";
+import DocumentUpload from "@/components/documents/DocumentUpload";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +70,9 @@ export default async function PropertyPage({ params }: PageProps) {
 
       {/* 관심 가능 문의 */}
       <MatchingInquiriesSection property={property} />
+
+      {/* 첨부 서류 */}
+      <DocumentSection propertyId={property.id} />
 
       {/* 고객 공유 링크 */}
       <div className="mt-6">
@@ -171,6 +177,22 @@ async function MatchingInquiriesSection({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+async function DocumentSection({ propertyId }: { propertyId: string }) {
+  const documents = await fetchDocumentsByProperty(propertyId);
+
+  return (
+    <div className="mt-6">
+      <h2 className="text-[17px] font-bold text-foreground mb-3">
+        첨부 서류 ({documents.length}건)
+      </h2>
+      <DocumentList documents={documents} propertyId={propertyId} />
+      <div className="mt-4">
+        <DocumentUpload propertyId={propertyId} />
+      </div>
     </div>
   );
 }
