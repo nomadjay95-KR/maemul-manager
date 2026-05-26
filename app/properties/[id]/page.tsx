@@ -7,6 +7,7 @@ import PropertyDetail from "@/components/properties/PropertyDetail";
 import StatusChanger from "@/components/properties/StatusChanger";
 import DeleteButton from "@/components/properties/DeleteButton";
 import ShareButtons from "@/components/properties/ShareButtons";
+import CreateShareLinkButton from "@/components/share/CreateShareLinkButton";
 
 export const dynamic = "force-dynamic";
 
@@ -67,9 +68,15 @@ export default async function PropertyPage({ params }: PageProps) {
       {/* 관심 가능 문의 */}
       <MatchingInquiriesSection property={property} />
 
-      {/* 공유 */}
+      {/* 고객 공유 링크 */}
+      <div className="mt-6">
+        <p className="text-sm text-muted-foreground mb-2">고객 공유</p>
+        <CreateShareLinkButton propertyIds={[property.id]} />
+      </div>
+
+      {/* 내부 공유 */}
       <div className="mt-6 mb-4">
-        <p className="text-sm text-muted-foreground mb-2">공유</p>
+        <p className="text-sm text-muted-foreground mb-2">내부 공유</p>
         <ShareButtons property={property} />
       </div>
     </main>

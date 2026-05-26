@@ -25,6 +25,7 @@ export default function TabNav({ role }: Props) {
     const tabs = [
       { value: "statistics", label: "통계" },
       { value: "notes", label: "메모장" },
+      { value: "shared-links", label: "공유 링크" },
     ];
     if (role === "admin") {
       tabs.push({ value: "users", label: "사용자 관리" });

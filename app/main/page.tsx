@@ -12,9 +12,10 @@ import {
 import { fetchNotes } from "@/lib/queries/notes";
 import { fetchUsersForAdmin } from "@/lib/queries/users";
 import { fetchUpcomingEvents } from "@/lib/queries/notifications";
+import { fetchSharedLinksWithAddresses } from "@/lib/queries/share";
 import { getAuthUser } from "@/lib/auth";
 import PropertyFilter from "@/components/properties/PropertyFilter";
-import PropertyCard from "@/components/properties/PropertyCard";
+import PropertyListWithSelect from "@/components/properties/PropertyListWithSelect";
 import InquiryFilter from "@/components/inquiries/InquiryFilter";
 import InquiryCard from "@/components/inquiries/InquiryCard";
 import LockButton from "@/components/properties/LockButton";
@@ -29,6 +30,7 @@ import RevenueChart from "@/components/statistics/RevenueChart";
 import UpcomingBalancesView from "@/components/statistics/UpcomingBalances";
 import NoteLayout from "@/components/notes/NoteLayout";
 import UserManagement from "@/components/users/UserManagement";
+import SharedLinkManagement from "@/components/share/SharedLinkManagement";
 import NotificationBanner from "@/components/notifications/NotificationBanner";
 
 const VALID_PROPERTY_STATUS = ["active", "reserved", "completed"] as const;
@@ -62,9 +64,9 @@ interface PageProps {
   }>;
 }
 
-type TabValue = "properties" | "inquiries" | "calendar" | "statistics" | "notes" | "users";
+type TabValue = "properties" | "inquiries" | "calendar" | "statistics" | "notes" | "users" | "shared-links";
 
-const VALID_TABS: TabValue[] = ["properties", "inquiries", "calendar", "statistics", "notes", "users"];
+const VALID_TABS: TabValue[] = ["properties", "inquiries", "calendar", "statistics", "notes", "users", "shared-links"];
 
 export default async function MainPage({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -83,6 +85,7 @@ export default async function MainPage({ searchParams }: PageProps) {
     statistics: "통계",
     notes: "메모장",
     users: "사용자 관리",
+    "shared-links": "공유 링크",
   };
 
   // 하단 등록 버튼 표시 여부 및 설정
@@ -155,6 +158,8 @@ export default async function MainPage({ searchParams }: PageProps) {
           <StatisticsTab />
         ) : tab === "users" ? (
           <UsersTab currentUserId={authUser?.id} />
+        ) : tab === "shared-links" ? (
+          <SharedLinksTab />
         ) : (
           <NotesTab noteId={params.noteId} />
         )}
@@ -219,13 +224,11 @@ async function PropertiesTab({
       <Suspense fallback={null}>
         <PropertyFilter exportButton={<PropertyExportButton properties={properties} />} />
       </Suspense>
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="mt-4">
         {properties.length === 0 ? (
           <EmptyState title="매물이 없습니다" description="새 매물을 등록해보세요." />
         ) : (
-          properties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))
+          <PropertyListWithSelect properties={properties} />
         )}
       </div>
     </>
@@ -312,4 +315,10 @@ async function UsersTab({ currentUserId }: { currentUserId?: string }) {
   const users = await fetchUsersForAdmin();
 
   return <UserManagement users={users} currentUserId={currentUserId} />;
+}
+
+async function SharedLinksTab() {
+  const links = await fetchSharedLinksWithAddresses();
+
+  return <SharedLinkManagement links={links} />;
 }
