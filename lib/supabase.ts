@@ -13,7 +13,13 @@ export function getSupabase(): SupabaseClient {
       );
     }
 
-    _supabase = createClient(supabaseUrl, supabaseAnonKey);
+    _supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        fetch: (url, options = {}) => {
+          return fetch(url, { ...options, cache: "no-store" });
+        },
+      },
+    });
   }
 
   return _supabase;
