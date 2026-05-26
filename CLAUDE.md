@@ -48,7 +48,7 @@ supabase migration list                      # 적용 상태 확인
 
 ### Key Directories
 
-- `/lib/actions/` — Server Actions (property, inquiry, schedule, note, user CRUD)
+- `/lib/actions/` — Server Actions (property, inquiry, schedule, note, user, sharedLink CRUD)
 - `/lib/queries/` — 서버 데이터 조회 함수 (검색/정렬/통계 지원)
 - `/lib/validations/` — Zod 스키마
 - `/lib/format/` — 가격 포맷, 라벨 매핑 유틸
@@ -57,7 +57,8 @@ supabase migration list                      # 적용 상태 확인
 - `/lib/constants/` — filterRanges.ts (매물 필터 옵션 상수)
 - `/components/forms/` — PropertyForm, InquiryForm, ScheduleForm, NoteForm, ImageUpload, AddressSearch, Field
 - `/lib/auth.ts` — 서버 컴포넌트용 쿠키 파싱 유틸 (`getAuthUser()`)
-- `/components/properties/` — PropertyFilter, FilterPanel, PropertyCard, PropertyDetail, StatusChanger, StatusBadge, AddressMap, ShareButtons, DeleteButton, LockButton, ExportButton
+- `/components/properties/` — PropertyFilter, FilterPanel, PropertyCard, PropertyListWithSelect, PropertyDetail, StatusChanger, StatusBadge, AddressMap, ShareButtons, DeleteButton, LockButton, ExportButton
+- `/components/share/` — CreateShareLinkButton, SharedLinkManagement, PublicPropertyView, PublicPropertyCard (외부 공유)
 - `/components/inquiries/` — InquiryCard, InquiryFilter, InquiryStatusChanger, DeleteInquiryButton, ExportButton
 - `/components/notifications/` — NotificationBanner (인앱 다가오는 일정 알림)
 - `/components/users/` — UserManagement, UserActions (admin 전용 사용자 관리)
@@ -66,7 +67,7 @@ supabase migration list                      # 적용 상태 확인
 - `/components/statistics/` — SummaryCards, ContractChart, RevenueChart, UpcomingBalances
 - `/components/notes/` — NoteLayout, NoteList, NoteDetail, NoteBadge, DeleteNoteButton
 - `/components/ui/` — shadcn 컴포넌트 + Toast, InfoRow, EmptyState
-- `/types/` — TypeScript 타입 정의 (property.ts, schedule.ts, note.ts, user.ts)
+- `/types/` — TypeScript 타입 정의 (property.ts, schedule.ts, note.ts, user.ts, sharedLink.ts)
 - `/supabase/migrations/` — DB 마이그레이션 SQL
 
 ### Shared Components (리팩터링 추출)
@@ -83,7 +84,7 @@ supabase migration list                      # 적용 상태 확인
 
 ### DB Schema
 
-단일 `properties` 테이블에 `type` 컬럼(`villa`/`shop`)으로 구분. 가격은 만원 단위 정수. `property_images` 테이블로 사진 관리 (최대 10장). `inquiries` 테이블로 문의 관리. `schedules` 테이블로 거래 일정 관리 (property_id FK, ON DELETE SET NULL, transaction_amount/fee 컬럼으로 거래금액·복비 저장). `notes` 테이블로 메모 관리 (property_id, inquiry_id FK, ON DELETE SET NULL, updated_at 자동 갱신 트리거). `property_status_history` 테이블로 매물 상태 변경 이력 관리 (property_id FK, ON DELETE CASCADE, from_status/to_status/changed_at). `users` 테이블로 사용자 관리 (name UNIQUE, pin, role admin/member). RLS 활성화, anon 역할 허용.
+단일 `properties` 테이블에 `type` 컬럼(`villa`/`shop`)으로 구분. 가격은 만원 단위 정수. `property_images` 테이블로 사진 관리 (최대 10장). `inquiries` 테이블로 문의 관리. `schedules` 테이블로 거래 일정 관리 (property_id FK, ON DELETE SET NULL, transaction_amount/fee 컬럼으로 거래금액·복비 저장). `notes` 테이블로 메모 관리 (property_id, inquiry_id FK, ON DELETE SET NULL, updated_at 자동 갱신 트리거). `property_status_history` 테이블로 매물 상태 변경 이력 관리 (property_id FK, ON DELETE CASCADE, from_status/to_status/changed_at). `users` 테이블로 사용자 관리 (name UNIQUE, pin, role admin/member). `shared_links` 테이블로 외부 공유 링크 관리 (token UNIQUE, property_ids uuid[], is_active, view_count). RLS 활성화, anon 역할 허용.
 
 ### External APIs
 
@@ -117,7 +118,7 @@ supabase migration list                      # 적용 상태 확인
 ### 탭 구조
 
 - 메인 탭: 매물장 / 문의장 / 캘린더 (3개)
-- 더보기 드롭다운: 통계 / 메모장 / 사용자 관리(admin만)
+- 더보기 드롭다운: 통계 / 메모장 / 공유 링크 / 사용자 관리(admin만)
 - `components/layout/TabNav.tsx` — MAIN_TABS(3개) + 동적 moreTabs 구조. role prop으로 admin일 때 "사용자 관리" 추가. 더보기 클릭 시 드롭다운 표시, 바깥 클릭 시 닫힘.
 - 더보기 탭 선택 시 "더보기" 텍스트에 파란색 활성 표시
 
@@ -165,7 +166,25 @@ supabase migration list                      # 적용 상태 확인
 - 관심 가능 문의: `MatchingInquiriesSection` — `fetchMatchingInquiries()`로 매물 조건에 맞는 active 문의 역방향 매칭 (거래유형, 보증금 범위, 월세 상한, 방수)
 - 매물 복사: 헤더 "복사" 버튼 → `/properties/new?copyFrom={id}`로 이동, 기존 데이터 프리필 (사진 제외, 상태 "가능"으로 초기화)
 - 전화 연결: 집주인 전화번호 `tel:` 링크 버튼 (모바일 원터치 발신)
-- 공유: 카카오톡 공유 + 링크 복사
+- 내부 공유: 카카오톡 공유 + 링크 복사
+- 고객 공유: 외부 열람 링크 생성 (비공개 필드 제외)
+
+### 고객 열람 페이지 (외부 공유)
+
+- 공유 단위: 매물 1건 또는 여러 매물 묶음
+- `shared_links` 테이블: token(랜덤 base64url), property_ids(uuid[]), is_active, view_count
+- `/share/[token]` 공개 페이지 — 미들웨어 인증 예외 (`middleware.ts` matcher에 `share` 추가)
+- **보안**: 공개 쿼리(`lib/queries/share.ts`)에서 공개 필드만 whitelist select. 비공개 필드(owner_phone, owner_personality, door_password, memo)는 쿼리에서 아예 제외.
+- `types/sharedLink.ts` — `PublicProperty` 타입 (비공개 필드 없음)
+- `components/share/PublicPropertyView.tsx` — 공개 매물 상세 (주소/가격/정보/사진/지도/특이사항만)
+- `components/share/PublicPropertyCard.tsx` — 묶음 공유 시 카드 나열
+- `app/share/[token]/SharePageClient.tsx` — 단일/묶음 뷰 전환, 하단 중개사 연락처 고정
+- 링크 생성: 매물 상세 "고객 공유 링크 만들기" 버튼 (`CreateShareLinkButton`) + 매물 목록 "선택 공유" 모드 (`PropertyListWithSelect`)
+- 생성 후: 링크 표시 + 카카오톡 공유 + 링크 복사
+- 관리: 더보기 → 공유 링크 (tab=shared-links). 활성/비활성 토글, 조회수 확인, 삭제
+- 비활성 링크 접속 시 "유효하지 않은 링크입니다" 안내 화면
+- 조회수: `increment_shared_link_views` DB 함수로 원자적 증가
+- API: `/api/shared-links` (POST 생성), `/api/shared-links/[id]` (PATCH 활성 토글, DELETE 삭제)
 
 ### Toast 알림
 
