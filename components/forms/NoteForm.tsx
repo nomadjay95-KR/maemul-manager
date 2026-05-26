@@ -56,27 +56,30 @@ export default function NoteForm({ initialData, noteId }: NoteFormProps) {
   useEffect(() => {
     fetch("/api/properties/active")
       .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        setProperties(data);
-        if (initialData?.property_id) {
-          setValue("property_id", initialData.property_id);
-        }
-      })
+      .then((data) => setProperties(data))
       .catch(() => setProperties([]));
-  }, [initialData?.property_id, setValue]);
+  }, []);
 
   // 문의 목록 로드
   useEffect(() => {
     fetch("/api/inquiries")
       .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        setInquiries(data);
-        if (initialData?.inquiry_id) {
-          setValue("inquiry_id", initialData.inquiry_id);
-        }
-      })
+      .then((data) => setInquiries(data))
       .catch(() => setInquiries([]));
-  }, [initialData?.inquiry_id, setValue]);
+  }, []);
+
+  // 옵션 로드 후 기존 값 재적용 (DOM 렌더 후 실행)
+  useEffect(() => {
+    if (properties.length > 0 && initialData?.property_id) {
+      setValue("property_id", initialData.property_id);
+    }
+  }, [properties, initialData?.property_id, setValue]);
+
+  useEffect(() => {
+    if (inquiries.length > 0 && initialData?.inquiry_id) {
+      setValue("inquiry_id", initialData.inquiry_id);
+    }
+  }, [inquiries, initialData?.inquiry_id, setValue]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
