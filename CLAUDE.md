@@ -26,6 +26,16 @@ npm run lint     # ESLint
 
 테스트 프레임워크 미설정. 변경 후 반드시 `npm run build`로 검증.
 
+### DB Migration
+
+```bash
+supabase link --project-ref <project-ref>   # 최초 1회
+supabase db push                             # 신규 마이그레이션 적용
+supabase migration list                      # 적용 상태 확인
+```
+
+기존 마이그레이션이 이미 적용된 DB에서 `db push` 실패 시: `supabase migration repair --status applied <version>...`으로 기존 항목 표시 후 재실행.
+
 ## Architecture
 
 ### Data Flow
@@ -44,7 +54,7 @@ npm run lint     # ESLint
 - `/lib/utils/` — brokerageFee.ts (복비 자동산출 유틸)
 - `/lib/constants/` — filterRanges.ts (매물 필터 옵션 상수)
 - `/components/forms/` — PropertyForm, InquiryForm, ScheduleForm, NoteForm, ImageUpload, AddressSearch, Field
-- `/components/properties/` — PropertyFilter, FilterPanel, PropertyCard, LockButton, StatusButtons
+- `/components/properties/` — PropertyFilter, FilterPanel, PropertyCard, PropertyDetail, StatusChanger, ShareButtons, DeleteButton, LockButton
 - `/components/calendar/` — CalendarView, DaySchedules, ScheduleBadge, DeleteScheduleButton
 - `/components/statistics/` — SummaryCards, ContractChart, RevenueChart, UpcomingBalances
 - `/components/notes/` — NoteLayout, NoteList, NoteDetail, NoteBadge, DeleteNoteButton
@@ -66,7 +76,7 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 
 ### DB Schema
 
-단일 `properties` 테이블에 `type` 컬럼(`villa`/`shop`)으로 구분. 가격은 만원 단위 정수. `property_images` 테이블로 사진 관리. `inquiries` 테이블로 문의 관리. `schedules` 테이블로 거래 일정 관리 (property_id FK, ON DELETE SET NULL, transaction_amount/fee 컬럼으로 거래금액·복비 저장). `notes` 테이블로 메모 관리 (property_id, inquiry_id FK, ON DELETE SET NULL, updated_at 자동 갱신 트리거). RLS 활성화, anon 역할 허용.
+단일 `properties` 테이블에 `type` 컬럼(`villa`/`shop`)으로 구분. 가격은 만원 단위 정수. `property_images` 테이블로 사진 관리 (최대 10장). `inquiries` 테이블로 문의 관리. `schedules` 테이블로 거래 일정 관리 (property_id FK, ON DELETE SET NULL, transaction_amount/fee 컬럼으로 거래금액·복비 저장). `notes` 테이블로 메모 관리 (property_id, inquiry_id FK, ON DELETE SET NULL, updated_at 자동 갱신 트리거). `property_status_history` 테이블로 매물 상태 변경 이력 관리 (property_id FK, ON DELETE CASCADE, from_status/to_status/changed_at). RLS 활성화, anon 역할 허용.
 
 ### External APIs
 
@@ -76,7 +86,7 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 
 ### 검색/정렬/필터
 
-- 매물: 주소 ilike 검색, 보증금순/상태순/최신순 정렬
+- 매물: 주소/메모/특이사항 ilike 검색 (`.or("address,memo,notes")`), 보증금순/상태순/최신순 정렬
 - 매물 상세 필터: "필터" 버튼 → 하단 슬라이드 패널 (7개 조건)
   - 거래유형(월세/전세/매매), 보증금 구간, 월세 구간, 방 개수, 입주상태(공실/입주중), 연식, 층수(지상/지하)
   - `lib/constants/filterRanges.ts` — 7개 필터 옵션 상수 (구간별 min/max 포함)
@@ -125,6 +135,15 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 - `components/statistics/` — SummaryCards(서버), ContractChart(클라이언트, recharts), RevenueChart(클라이언트, recharts), UpcomingBalances(서버)
 - `lib/utils/brokerageFee.ts` — calculateFee(dealType, amount): 2024 법정 상한요율, getMonthlyRentAmount(): 월세 환산액
 
+### 매물 상세 페이지
+
+- 상태 변경: `StatusChanger` 컴포넌트로 가능/계약중/완료 전환, 변경 시 `property_status_history`에 이력 자동 기록
+- 상태 변경 이력: `StatusHistorySection` — 시간순 이력 표시 (from → to, 날짜)
+- 관심 가능 문의: `MatchingInquiriesSection` — `fetchMatchingInquiries()`로 매물 조건에 맞는 active 문의 역방향 매칭 (거래유형, 보증금 범위, 월세 상한, 방수)
+- 매물 복사: 헤더 "복사" 버튼 → `/properties/new?copyFrom={id}`로 이동, 기존 데이터 프리필 (사진 제외, 상태 "가능"으로 초기화)
+- 전화 연결: 집주인 전화번호 `tel:` 링크 버튼 (모바일 원터치 발신)
+- 공유: 카카오톡 공유 + 링크 복사
+
 ### Toast 알림
 
 - `components/ui/Toast.tsx` — Context 기반, `useToast()` 훅
@@ -141,7 +160,8 @@ PIN 기반 잠금 (사용자 계정 없음). `APP_PIN` 환경변수. `middleware
 - RLS: anon 전체 허용 (앱 레벨 PIN 잠금)
 - Storage: property-photos 버킷 (anon INSERT/SELECT/DELETE)
 - 현관 비밀번호: 평문 저장
-- 매물-문의 FK 없음 (쿼리 매칭)
+- 매물-문의 FK 없음 (쿼리 매칭: 문의→매물 `fetchMatchingProperties`, 매물→문의 `fetchMatchingInquiries`)
+- 매물-상태이력 FK 있음 (property_status_history.property_id → properties.id, ON DELETE CASCADE)
 - 매물-일정 FK 있음 (schedules.property_id → properties.id, ON DELETE SET NULL)
 - 메모-매물/문의 FK 있음 (notes.property_id → properties.id, notes.inquiry_id → inquiries.id, ON DELETE SET NULL)
 - 수정 후 revalidatePath 필수
